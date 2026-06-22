@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { getSupabase } from "@/lib/supabase/client";
 import type { AuthMode } from "@/components/providers/AuthProvider";
@@ -30,6 +30,18 @@ export function AuthModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  // lock background scroll while the popup is open
+  useEffect(() => {
+    if (!openState) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [openState, onClose]);
 
   function reset() {
     setError(null);
@@ -75,6 +87,7 @@ export function AuthModal({
 
   async function social(provider: "google" | "apple") {
     setError(null);
+    const label = provider === "google" ? "Google" : "Apple";
     try {
       const { error } = await getSupabase().auth.signInWithOAuth({
         provider,
@@ -82,7 +95,12 @@ export function AuthModal({
       });
       if (error) throw error;
     } catch (err) {
-      setError(err instanceof Error ? err.message : `${provider} sign-in unavailable.`);
+      const msg = err instanceof Error ? err.message : "";
+      setError(
+        /not enabled|unsupported provider/i.test(msg)
+          ? `${label} sign-in isn't set up yet — please continue with email.`
+          : msg || `${label} sign-in is unavailable right now.`
+      );
     }
   }
 
