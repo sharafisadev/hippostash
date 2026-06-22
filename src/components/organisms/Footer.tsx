@@ -1,29 +1,31 @@
 import Image from "next/image";
+import Link from "next/link";
 
 const columns = [
   {
     title: "Product",
     links: [
-      { href: "#features", label: "Features" },
-      { href: "#formats", label: "Formats" },
-      { href: "#convert", label: "Convert" },
-      { href: "#pricing", label: "Pricing" },
+      { href: "/#features", label: "Features" },
+      { href: "/#convert", label: "Convert" },
+      { href: "/#storage", label: "Storage" },
+      { href: "/#pricing", label: "Pricing" },
     ],
   },
   {
     title: "Company",
     links: [
-      { href: "#", label: "About" },
-      { href: "#", label: "Help Center" },
-      { href: "#faq", label: "FAQ" },
+      { href: "/about", label: "About" },
+      { href: "/company", label: "Company" },
+      { href: "/help", label: "Help Center" },
+      { href: "/faq", label: "FAQ" },
     ],
   },
   {
     title: "Legal",
     links: [
-      { href: "#", label: "Privacy Policy" },
-      { href: "#", label: "Terms of Service" },
-      { href: "#", label: "Security" },
+      { href: "/privacy", label: "Privacy Policy" },
+      { href: "/terms", label: "Terms of Service" },
+      { href: "/security", label: "Security" },
     ],
   },
 ];
@@ -48,9 +50,9 @@ export function Footer() {
               <div className="mb-4 text-[13px] font-semibold text-white/40">{col.title}</div>
               <div className="flex flex-col gap-[11px]">
                 {col.links.map((l) => (
-                  <a key={l.label} href={l.href} className="text-sm font-medium text-white/60 transition-colors hover:text-white">
+                  <Link key={l.label} href={l.href} className="text-sm font-medium text-white/60 transition-colors hover:text-white">
                     {l.label}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
