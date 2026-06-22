@@ -7,8 +7,8 @@ import { useAuth } from "@/components/providers/AuthProvider";
 
 const links = [
   { href: "#features", label: "Features" },
-  { href: "#formats", label: "Formats" },
   { href: "#convert", label: "Convert" },
+  { href: "#storage", label: "Storage" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
 ];
@@ -37,9 +37,13 @@ export function Navbar() {
         <div className="hidden items-center gap-2.5 md:flex">
           {user ? (
             <>
-              <span className="max-w-[160px] truncate px-1 text-sm text-white/70">
-                {user.email}
-              </span>
+              <a
+                href="#storage"
+                className="btn-primary inline-flex items-center gap-1.5 rounded-[13px] px-[18px] py-2.5 text-sm"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" /></svg>
+                My Stash
+              </a>
               <button
                 onClick={() => signOut()}
                 className="lq rounded-[13px] px-[18px] py-2.5 text-sm font-semibold text-white"

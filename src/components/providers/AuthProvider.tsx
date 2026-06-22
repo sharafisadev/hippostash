@@ -76,7 +76,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         plan={opts.plan}
         onClose={close}
         onModeChange={setMode}
-        onSuccess={() => setModalOpen(false)}
+        onSuccess={() => {
+          setModalOpen(false);
+          // glide to the now-unlocked stash
+          setTimeout(
+            () =>
+              document
+                .getElementById("storage")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+            350
+          );
+        }}
       />
     </AuthContext.Provider>
   );

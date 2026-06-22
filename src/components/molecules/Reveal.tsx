@@ -2,17 +2,15 @@
 
 import { motion, type Variants } from "framer-motion";
 
-// Smooth, modern entrance: fade + rise + scale + blur-out, easeOutExpo.
+// Smooth, modern entrance — transform + opacity only (GPU-composited, no jank).
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 const variants: Variants = {
-  hidden: { opacity: 0, y: 44, scale: 0.96, filter: "blur(12px)" },
+  hidden: { opacity: 0, y: 28 },
   show: {
     opacity: 1,
     y: 0,
-    scale: 1,
-    filter: "blur(0px)",
-    transition: { duration: 0.85, ease: EASE },
+    transition: { duration: 0.6, ease: EASE },
   },
 };
 
