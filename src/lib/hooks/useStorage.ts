@@ -77,6 +77,28 @@ export function useStorage() {
     [refresh]
   );
 
+  const rename = useCallback(
+    async (path: string, name: string) => {
+      const res = await fetch("/api/files", {
+        method: "PATCH",
+        headers: { ...(await authHeaders()), "Content-Type": "application/json" },
+        body: JSON.stringify({ path, name }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Rename failed.");
+      await refresh();
+    },
+    [refresh]
+  );
+
+  const previewUrl = useCallback(async (path: string): Promise<string | null> => {
+    const res = await fetch(`/api/files?sign=${encodeURIComponent(path)}`, {
+      headers: await authHeaders(),
+    });
+    const data = (await res.json()) as { url?: string };
+    return data.url ?? null;
+  }, []);
+
   const preview = useCallback(async (path: string) => {
     const res = await fetch(`/api/files?sign=${encodeURIComponent(path)}`, {
       headers: await authHeaders(),
@@ -86,5 +108,5 @@ export function useStorage() {
   }, []);
 
   const used = files.reduce((s, f) => s + f.size, 0);
-  return { files, used, loading, error, refresh, upload, remove, preview };
+  return { files, used, loading, error, refresh, upload, remove, rename, preview, previewUrl };
 }

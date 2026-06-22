@@ -1,195 +1,230 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Reveal } from "@/components/molecules/Reveal";
 import { FileGlyph } from "@/components/atoms/FileGlyph";
+import { HippoLoader } from "@/components/atoms/HippoLoader";
 import { formatBytes, cn } from "@/lib/utils";
 
-const IMAGE_FORMATS = ["PNG", "JPEG", "WEBP", "PDF", "BMP", "ICO"] as const;
-const DOC_FORMATS = ["PDF", "DOCX", "PNG", "JPG", "TXT"] as const;
-
 const EXT: Record<string, string> = {
-  PNG: "png", JPEG: "jpg", JPG: "jpg", WEBP: "webp",
-  PDF: "pdf", BMP: "bmp", ICO: "ico", DOCX: "docx", TXT: "txt",
+  PNG: "png", JPEG: "jpg", JPG: "jpg", WEBP: "webp", GIF: "gif",
+  BMP: "bmp", ICO: "ico", PDF: "pdf", DOCX: "docx", TXT: "txt",
 };
+
+// Image inputs convert to these in-browser (instant, free); everything else
+// goes to the cloud converter.
+const CLIENT_FORMATS = ["PNG", "JPEG", "WEBP", "BMP", "ICO", "PDF"];
+
+const FORMAT_GROUPS = [
+  { label: "To image", formats: ["PNG", "JPEG", "WEBP", "GIF", "BMP", "ICO"] },
+  { label: "To document", formats: ["PDF", "DOCX", "TXT"] },
+];
 
 const ACCEPT = "image/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.rtf,.odt,.csv";
 
-type Stage = "idle" | "converting" | "done";
-interface Result {
-  url: string;
-  name: string;
-  size: number;
-  serverStored: boolean;
+type ItemStatus = "queued" | "converting" | "done" | "error";
+interface QueueItem {
+  id: string;
+  file: File;
+  status: ItemStatus;
+  result?: { url: string; name: string; size: number };
+  error?: string;
 }
 
 function glyphFor(name: string): string {
   return (name.split(".").pop() || "ZIP").toUpperCase();
 }
-
-const checklist = [
-  "Convert between PDF, DOCX, JPG, PNG, XLSX and more",
-  "Original quality preserved, every time",
-  "Download or share the moment it's done",
-];
+const isImageFile = (f: File) => f.type.startsWith("image/");
 
 export function ConverterSection() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [format, setFormat] = useState<string>("PNG");
-  const [stage, setStage] = useState<Stage>("idle");
-  const [progress, setProgress] = useState(0);
+  const [items, setItems] = useState<QueueItem[]>([]);
+  const [format, setFormat] = useState("PNG");
+  const [converting, setConverting] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<Result | null>(null);
 
-  const isImage = !!file && file.type.startsWith("image/");
-  const formats = isImage ? IMAGE_FORMATS : DOC_FORMATS;
+  const addFiles = useCallback((list: FileList | null) => {
+    const arr = Array.from(list ?? []);
+    if (!arr.length) return;
+    setItems((prev) => [
+      ...prev,
+      ...arr.map((file) => ({
+        id: `${file.name}-${file.size}-${Math.random().toString(36).slice(2, 7)}`,
+        file,
+        status: "queued" as ItemStatus,
+      })),
+    ]);
+  }, []);
 
-  const reset = useCallback(() => {
-    if (result?.url.startsWith("blob:")) URL.revokeObjectURL(result.url);
-    setFile(null);
-    setResult(null);
-    setStage("idle");
-    setProgress(0);
-    setError(null);
-  }, [result]);
-
-  function selectFile(f: File | null | undefined) {
-    if (!f) return;
-    setError(null);
-    setResult(null);
-    setStage("idle");
-    setFile(f);
-    const next = f.type.startsWith("image/") ? IMAGE_FORMATS : DOC_FORMATS;
-    setFormat(next[0]);
+  function removeItem(id: string) {
+    setItems((prev) => {
+      const it = prev.find((p) => p.id === id);
+      if (it?.result?.url.startsWith("blob:")) URL.revokeObjectURL(it.result.url);
+      return prev.filter((p) => p.id !== id);
+    });
   }
 
-  async function convert() {
-    if (!file) return;
-    setStage("converting");
-    setProgress(0);
-    setError(null);
+  function clearAll() {
+    items.forEach((i) => i.result?.url.startsWith("blob:") && URL.revokeObjectURL(i.result.url));
+    setItems([]);
+  }
 
-    const timer = setInterval(() => setProgress((p) => (p < 85 ? p + 7 : p)), 150);
-    const useClient = isImage && (IMAGE_FORMATS as readonly string[]).includes(format);
+  async function convertAll() {
+    const pending = items.filter((i) => i.status === "queued" || i.status === "error");
+    if (!pending.length) return;
+    setConverting(true);
 
-    try {
-      const baseName = file.name.replace(/\.[^.]+$/, "") || "converted";
-      let res: Result;
-      if (useClient) {
-        const blob = await convertImage(file, format);
-        res = { url: URL.createObjectURL(blob), name: `${baseName}.${EXT[format]}`, size: blob.size, serverStored: false };
-      } else {
-        res = await convertViaServer(file, format);
+    for (const item of pending) {
+      setItems((prev) => prev.map((p) => (p.id === item.id ? { ...p, status: "converting", error: undefined } : p)));
+      try {
+        const baseName = item.file.name.replace(/\.[^.]+$/, "") || "converted";
+        const useClient = isImageFile(item.file) && CLIENT_FORMATS.includes(format);
+        let result: { url: string; name: string; size: number };
+        if (useClient) {
+          const blob = await convertImage(item.file, format);
+          result = { url: URL.createObjectURL(blob), name: `${baseName}.${EXT[format]}`, size: blob.size };
+        } else {
+          result = await convertViaServer(item.file, format);
+        }
+        setItems((prev) => prev.map((p) => (p.id === item.id ? { ...p, status: "done", result } : p)));
+      } catch (e) {
+        setItems((prev) =>
+          prev.map((p) => (p.id === item.id ? { ...p, status: "error", error: e instanceof Error ? e.message : "Failed" } : p))
+        );
       }
-      clearInterval(timer);
-      setProgress(100);
-      setResult(res);
-      setTimeout(() => setStage("done"), 350);
-    } catch (e) {
-      clearInterval(timer);
-      setStage("idle");
-      setProgress(0);
-      setError(e instanceof Error ? e.message : "Conversion failed.");
     }
+    setConverting(false);
   }
+
+  function downloadAll() {
+    items.filter((i) => i.result).forEach((i, idx) => {
+      setTimeout(() => {
+        const a = document.createElement("a");
+        a.href = i.result!.url;
+        a.download = i.result!.name;
+        a.click();
+      }, idx * 250);
+    });
+  }
+
+  const doneCount = items.filter((i) => i.status === "done").length;
+  const pendingCount = items.filter((i) => i.status === "queued" || i.status === "error").length;
+  const convertingCount = items.filter((i) => i.status === "converting").length;
 
   return (
-    <section id="convert" className="relative z-[2] mx-auto max-w-[1180px] px-4 sm:px-6 py-16">
-      {/* distinct gradient field behind the console */}
-      <div className="pointer-events-none absolute inset-x-0 top-1/2 -z-10 mx-auto h-[480px] max-w-[900px] -translate-y-1/2 rounded-[40px] bg-[radial-gradient(60%_60%_at_30%_50%,rgba(78,205,196,0.10),transparent_70%),radial-gradient(60%_60%_at_80%_50%,rgba(155,89,182,0.12),transparent_70%)]" />
+    <section id="convert" className="relative z-[2] mx-auto max-w-[1180px] px-4 py-16 sm:px-6">
+      <div className="pointer-events-none absolute inset-x-0 top-1/2 -z-10 mx-auto h-[420px] max-w-[820px] -translate-y-1/2 rounded-[40px] bg-[radial-gradient(60%_60%_at_30%_50%,rgba(78,205,196,0.10),transparent_70%),radial-gradient(60%_60%_at_80%_50%,rgba(155,89,182,0.12),transparent_70%)]" />
 
-      <div className="grid items-center gap-16 md:grid-cols-[1.05fr_0.95fr]">
-        {/* Left — converter as an app window (distinct from glass cards) */}
-        <Reveal>
-          <div className="relative overflow-hidden rounded-[20px] border border-white/10 bg-[#0a0a12]/95 shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
-            {/* gradient top accent */}
-            <div className="h-[3px] w-full bg-[linear-gradient(90deg,var(--a1),var(--a2),var(--a3))]" />
-            {/* window title bar */}
-            <div className="flex items-center gap-2 border-b border-white/[0.07] px-4 py-3">
-              <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-              <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
-              <span className="h-3 w-3 rounded-full bg-[#28c840]" />
-              <span className="ml-2 font-mono text-xs text-white/40">hippo-convert</span>
-              <span className="ml-auto flex items-center gap-1.5 text-[11px] text-accent-cyan">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent-cyan" /> ready
-              </span>
-            </div>
+      <Reveal className="mx-auto mb-10 max-w-[620px] text-center">
+        <div className="mb-4 text-[13px] font-semibold uppercase tracking-[0.14em] text-accent-violet">Convert with ease</div>
+        <h2 className="m-0 font-display text-[clamp(30px,4.4vw,50px)] font-bold leading-[1.05] tracking-[-0.03em]">
+          Convert any file — even a batch.
+        </h2>
+        <p className="mx-auto mt-4 max-w-[460px] text-[16px] leading-[1.6] text-white/55">
+          Drop in one file or many, pick a format, and Hippo Stash converts them
+          all. Images convert instantly; documents in the cloud.
+        </p>
+      </Reveal>
 
-            <input
-              ref={inputRef}
-              type="file"
-              accept={ACCEPT}
-              className="sr-only"
-              aria-label="Select a file to convert"
-              onChange={(e) => selectFile(e.target.files?.[0])}
-            />
+      <Reveal>
+        <div className="mx-auto max-w-[960px] overflow-hidden rounded-[20px] border border-white/10 bg-[#0a0a12]/95 shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
+          <div className="h-[3px] w-full bg-[linear-gradient(90deg,var(--a1),var(--a2),var(--a3))]" />
+          <div className="flex items-center gap-2 border-b border-white/[0.07] px-4 py-3">
+            <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+            <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
+            <span className="h-3 w-3 rounded-full bg-[#28c840]" />
+            <span className="ml-2 font-mono text-xs text-white/40">hippo-convert</span>
+            <span className="ml-auto font-mono text-[11px] text-white/40">{items.length} file{items.length === 1 ? "" : "s"}</span>
+          </div>
 
-            <div className="p-6">
-              {stage === "done" && result ? (
-                <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-                  <div className="mx-auto mb-3.5 grid h-[52px] w-[52px] place-items-center rounded-[14px] bg-[linear-gradient(135deg,var(--a1),var(--a2))]">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B0B14" strokeWidth="2.4"><path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  </div>
-                  <div className="font-display text-[18px] font-semibold">Your file is ready!</div>
-                  <div className="mt-1 text-[13px] text-white/45">
-                    {result.name} · {formatBytes(result.size)}
-                    {result.serverStored && " · saved to your stash"}
-                  </div>
-                  <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                    <a href={result.url} download={result.name} className="btn-primary inline-flex h-11 items-center rounded-[12px] px-5 text-sm">Download</a>
-                    <button onClick={reset} className="inline-flex h-11 items-center rounded-[12px] border border-white/10 bg-white/[0.04] px-5 text-sm font-semibold text-white hover:bg-white/[0.08]">Convert another</button>
-                  </div>
-                </motion.div>
-              ) : (
-                <div>
-                  {/* dropzone */}
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => inputRef.current?.click()}
-                    onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && inputRef.current?.click()}
-                    onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-                    onDragLeave={() => setDragging(false)}
-                    onDrop={(e) => { e.preventDefault(); setDragging(false); selectFile(e.dataTransfer.files?.[0]); }}
-                    className={cn(
-                      "cursor-pointer rounded-[14px] border border-dashed p-8 text-center transition-colors",
-                      dragging ? "border-accent-cyan/70 bg-accent-cyan/[0.06]" : "border-white/15 bg-white/[0.02] hover:border-white/25"
-                    )}
-                  >
-                    {file ? (
-                      <div className="flex items-center justify-center gap-3">
-                        <FileGlyph format={glyphFor(file.name)} size={40} showLabel={false} />
-                        <div className="text-left">
-                          <div className="text-sm font-semibold">{file.name}</div>
-                          <div className="text-xs text-white/45">{formatBytes(file.size)}{!isImage && " · converts in the cloud"}</div>
+          <input ref={inputRef} type="file" accept={ACCEPT} multiple className="sr-only" aria-label="Select files to convert" onChange={(e) => addFiles(e.target.files)} />
+
+          <div className="grid md:grid-cols-[1.45fr_1fr]">
+            {/* left — dropzone + queue */}
+            <div className="border-b border-white/[0.06] p-5 md:border-b-0 md:border-r">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => inputRef.current?.click()}
+                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && inputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={(e) => { e.preventDefault(); setDragging(false); addFiles(e.dataTransfer.files); }}
+                className={cn(
+                  "flex cursor-pointer flex-col items-center justify-center rounded-[14px] border border-dashed p-6 text-center transition-colors",
+                  dragging ? "border-accent-cyan/70 bg-accent-cyan/[0.06]" : "border-white/15 bg-white/[0.02] hover:border-white/25"
+                )}
+              >
+                <div className="mb-2 grid h-10 w-10 place-items-center rounded-[12px] bg-[linear-gradient(135deg,var(--a1),var(--a2))]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B0B14" strokeWidth="2.2"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg>
+                </div>
+                <div className="font-mono text-[13px] text-white/70">drop files to convert</div>
+                <div className="mt-1 font-mono text-[11px] text-white/35">images · pdf · docx · xlsx · …</div>
+              </div>
+
+              {/* queue */}
+              <div className="mt-4 flex max-h-[280px] flex-col gap-2 overflow-y-auto">
+                <AnimatePresence mode="popLayout">
+                  {items.map((it) => (
+                    <motion.div
+                      key={it.id}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -16, height: 0 }}
+                      transition={{ duration: 0.22 }}
+                      className="flex items-center gap-3 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2.5"
+                    >
+                      <FileGlyph format={glyphFor(it.file.name)} size={28} showLabel={false} />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">{it.file.name}</div>
+                        <div className="text-xs text-white/45">
+                          {it.status === "converting" ? (
+                            <span className="text-accent-cyan">Converting…</span>
+                          ) : it.status === "done" ? (
+                            <span className="text-file-image">Done · {formatBytes(it.result!.size)}</span>
+                          ) : it.status === "error" ? (
+                            <span className="text-file-pdf">{it.error}</span>
+                          ) : (
+                            formatBytes(it.file.size)
+                          )}
                         </div>
                       </div>
-                    ) : (
-                      <>
-                        <div className="mx-auto mb-3 grid h-[52px] w-[52px] animate-bob place-items-center rounded-[14px] bg-[linear-gradient(135deg,var(--a1),var(--a2))]">
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B0B14" strokeWidth="2.2"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg>
-                        </div>
-                        <div className="font-mono text-[13px] text-white/70">drop a file to convert</div>
-                        <div className="mt-1 font-mono text-[11px] text-white/35">pdf · docx · jpg · png · xlsx · …</div>
-                      </>
-                    )}
-                  </div>
+                      {it.status === "converting" ? (
+                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-accent-cyan" />
+                      ) : it.status === "done" ? (
+                        <a href={it.result!.url} download={it.result!.name} title="Download" className="grid h-7 w-7 place-items-center rounded-[8px] text-accent-cyan transition-colors hover:bg-white/10">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        </a>
+                      ) : (
+                        <button onClick={() => removeItem(it.id)} aria-label="Remove" className="grid h-7 w-7 place-items-center rounded-[8px] text-white/40 transition-colors hover:bg-white/10 hover:text-file-pdf">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M6 18L18 6" strokeLinecap="round" /></svg>
+                        </button>
+                      )}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                {items.length === 0 && (
+                  <p className="py-6 text-center font-mono text-xs text-white/30">no files queued yet</p>
+                )}
+              </div>
+            </div>
 
-                  {error && <p className="mt-4 rounded-[10px] bg-amber-400/10 px-3 py-2 text-sm text-amber-300">{error}</p>}
-
-                  {/* format selector — mono chips */}
-                  <div className="mt-5">
-                    <div className="mb-2 font-mono text-[11px] uppercase tracking-wider text-white/40">output format</div>
-                    <div className="flex flex-wrap gap-2">
-                      {formats.map((f) => (
+            {/* right — format + actions */}
+            <div className="flex flex-col p-5">
+              <div className="mb-1 font-mono text-[11px] uppercase tracking-wider text-white/40">output format</div>
+              <div className="flex flex-col gap-3">
+                {FORMAT_GROUPS.map((g) => (
+                  <div key={g.label}>
+                    <div className="mb-1.5 text-[11px] text-white/35">{g.label}</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {g.formats.map((f) => (
                         <button
                           key={f}
                           onClick={() => setFormat(f)}
                           className={cn(
-                            "rounded-[8px] border px-3.5 py-1.5 font-mono text-[13px] transition-colors",
+                            "rounded-[8px] border px-3 py-1.5 font-mono text-[12px] transition-colors",
                             format === f ? "border-accent-cyan/60 bg-accent-cyan/10 text-accent-cyan" : "border-white/10 text-white/55 hover:text-white"
                           )}
                         >
@@ -198,62 +233,56 @@ export function ConverterSection() {
                       ))}
                     </div>
                   </div>
+                ))}
+              </div>
 
-                  {stage === "converting" ? (
-                    <div className="mt-5">
-                      <div className="mb-2 flex items-center justify-between font-mono text-xs text-white/55">
-                        <span>converting…</span><span className="text-accent-cyan">{progress}%</span>
-                      </div>
-                      <div className="h-[7px] overflow-hidden rounded-full bg-white/[0.07]">
-                        <motion.div className="h-full rounded-full bg-gradient-to-r from-accent-cyan to-accent-violet" initial={{ width: 0 }} animate={{ width: `${progress}%` }} />
-                      </div>
-                    </div>
-                  ) : (
-                    <button onClick={convert} disabled={!file} className="btn-primary mt-5 w-full rounded-[12px] py-[13px] text-[15px] disabled:cursor-not-allowed disabled:opacity-50">
-                      {file ? `Convert → .${EXT[format] ?? format.toLowerCase()}` : "Select a file"}
+              <div className="mt-auto pt-5">
+                {converting ? (
+                  <div className="grid place-items-center rounded-[12px] bg-white/[0.03] py-4">
+                    <HippoLoader size={44} label={`Converting ${doneCount + convertingCount}/${items.length}…`} />
+                  </div>
+                ) : (
+                  <button
+                    onClick={convertAll}
+                    disabled={pendingCount === 0}
+                    className="btn-primary w-full rounded-[12px] py-[13px] text-[15px] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {pendingCount === 0
+                      ? doneCount > 0 ? "All converted ✓" : "Add files to convert"
+                      : `Convert ${pendingCount} → .${EXT[format] ?? format.toLowerCase()}`}
+                  </button>
+                )}
+
+                {doneCount > 0 && !converting && (
+                  <div className="mt-2 flex gap-2">
+                    {doneCount > 1 && (
+                      <button onClick={downloadAll} className="flex-1 rounded-[12px] border border-white/10 bg-white/[0.04] py-2.5 text-sm font-semibold text-white hover:bg-white/[0.08]">
+                        Download all ({doneCount})
+                      </button>
+                    )}
+                    <button onClick={clearAll} className="flex-1 rounded-[12px] border border-white/10 bg-white/[0.04] py-2.5 text-sm font-semibold text-white hover:bg-white/[0.08]">
+                      Clear
                     </button>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </Reveal>
-
-        {/* Right — copy */}
-        <Reveal>
-          <div className="mb-4 text-[13px] font-semibold uppercase tracking-[0.14em] text-accent-violet">Convert with ease</div>
-          <h2 className="m-0 mb-[18px] font-display text-[clamp(30px,3.8vw,46px)] font-bold leading-[1.06] tracking-[-0.03em]">
-            Change any document into the format you need.
-          </h2>
-          <p className="m-0 mb-7 text-[17px] leading-[1.6] text-white/55">
-            Select a file, choose a format, and Hippo Stash handles the rest —
-            images convert instantly in your browser, documents securely in the cloud.
-          </p>
-          <div className="flex flex-col gap-4">
-            {checklist.map((c) => (
-              <div key={c} className="flex items-center gap-[13px]">
-                <span className="grid h-6 w-6 flex-none place-items-center rounded-full border border-accent-cyan/40 bg-accent-cyan/[0.18]">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--a1)" strokeWidth="3"><path d="M20 6L9 17l-5-5" /></svg>
-                </span>
-                <span className="text-[16px] text-white/[0.82]">{c}</span>
-              </div>
-            ))}
-          </div>
-        </Reveal>
-      </div>
+        </div>
+      </Reveal>
     </section>
   );
 }
 
 /* ── Server path (documents) ── */
-async function convertViaServer(file: File, format: string): Promise<Result> {
+async function convertViaServer(file: File, format: string): Promise<{ url: string; name: string; size: number }> {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("format", format);
   const res = await fetch("/api/convert", { method: "POST", body: fd });
   const data = (await res.json()) as { url?: string; name?: string; size?: number; error?: string };
   if (!res.ok || !data.url) throw new Error(data.error ?? "Conversion failed.");
-  return { url: data.url, name: data.name ?? `converted.${EXT[format] ?? "bin"}`, size: data.size ?? 0, serverStored: true };
+  return { url: data.url, name: data.name ?? `converted.${EXT[format] ?? "bin"}`, size: data.size ?? 0 };
 }
 
 /* ── Client path (images), dependency-free ── */

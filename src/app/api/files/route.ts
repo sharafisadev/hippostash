@@ -91,3 +91,25 @@ export async function DELETE(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
+
+export async function PATCH(req: Request) {
+  const user = await getUser(req);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { path, name } = (await req.json()) as { path?: string; name?: string };
+  if (!path || !path.startsWith(`${user.id}/`)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const clean = (name ?? "").trim().replace(/[/\\]/g, "");
+  if (!clean) return NextResponse.json({ error: "Invalid name." }, { status: 400 });
+
+  // Preserve the timestamp prefix so ordering/uniqueness is kept.
+  const fileName = path.split("/").pop() ?? "";
+  const ts = fileName.match(/^(\d+)-/)?.[1] ?? String(Date.now());
+  const newPath = `${user.id}/${ts}-${clean}`;
+  if (newPath === path) return NextResponse.json({ ok: true });
+
+  const { error } = await createAdminClient().storage.from(BUCKET).move(path, newPath);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
