@@ -50,7 +50,7 @@ const small = [
 
 export function FeatureGrid() {
   return (
-    <section id="features" className="relative z-[2] mx-auto max-w-[1180px] px-6 py-12">
+    <section id="features" className="relative z-[2] mx-auto max-w-[1180px] px-4 sm:px-6 py-12">
       <Reveal className="mb-[52px] text-center">
         <Eyebrow color="var(--a1)">Features</Eyebrow>
         <h2 className="mx-auto max-w-[680px] font-display text-[clamp(32px,4.4vw,52px)] font-bold leading-[1.05] tracking-[-0.03em]">

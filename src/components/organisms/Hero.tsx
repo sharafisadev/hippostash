@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import { motion } from "framer-motion";
 import { HeroApp } from "@/components/organisms/HeroApp";
 
@@ -14,28 +13,10 @@ const item = {
 };
 
 export function Hero() {
-  const tiltRef = useRef<HTMLDivElement>(null);
-
-  function onMove(e: React.MouseEvent<HTMLElement>) {
-    const tilt = tiltRef.current;
-    if (!tilt) return;
-    const r = e.currentTarget.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width - 0.5;
-    const py = (e.clientY - r.top) / r.height - 0.5;
-    tilt.style.transform = `perspective(1200px) rotateY(${px * 6}deg) rotateX(${-py * 5}deg)`;
-  }
-  function onLeave() {
-    if (tiltRef.current) {
-      tiltRef.current.style.transform = "perspective(1200px) rotateY(0deg) rotateX(0deg)";
-    }
-  }
-
   return (
     <header
       id="top"
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-      className="relative z-[2] mx-auto max-w-[1200px] px-6 pb-12 pt-[140px] sm:pt-[160px]"
+      className="relative z-[2] mx-auto max-w-[1200px] px-4 pb-12 pt-[132px] sm:px-6 sm:pt-[160px]"
     >
       <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
         {/* Left — copy */}
@@ -93,12 +74,12 @@ export function Hero() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="relative"
+          className="relative min-w-0"
           style={{ transformStyle: "preserve-3d" }}
         >
           <div className="pointer-events-none absolute -inset-x-4 -bottom-6 -top-8 bg-[radial-gradient(55%_55%_at_60%_40%,rgba(155,89,182,0.22),transparent_70%)] blur-[40px]" />
           <div className="pointer-events-none absolute -inset-px rounded-[25px] opacity-40 [background:linear-gradient(135deg,rgba(78,205,196,0.5),transparent_40%,transparent_60%,rgba(155,89,182,0.5))]" />
-          <div ref={tiltRef} className="relative transition-transform duration-300 ease-out">
+          <div className="relative">
             <HeroApp />
           </div>
         </motion.div>

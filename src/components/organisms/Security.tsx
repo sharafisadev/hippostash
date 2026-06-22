@@ -6,7 +6,7 @@ const chips = ["256-bit encryption", "Biometric lock", "Two-factor auth", "Zero-
 
 export function Security() {
   return (
-    <section className="relative z-[2] mx-auto max-w-[1180px] px-6 py-12">
+    <section className="relative z-[2] mx-auto max-w-[1180px] px-4 sm:px-6 py-12">
       <div className="grid items-center gap-[60px] md:grid-cols-[0.9fr_1.1fr]">
         <Reveal>
           <div className="mb-4 text-[13px] font-semibold uppercase tracking-[0.14em] text-accent-cyan">

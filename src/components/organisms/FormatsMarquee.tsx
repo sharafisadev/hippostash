@@ -10,7 +10,7 @@ const FORMATS = [
 
 export function FormatsMarquee() {
   return (
-    <section id="formats" className="relative z-[2] mx-auto max-w-[1080px] px-6 py-24">
+    <section id="formats" className="relative z-[2] mx-auto max-w-[1080px] px-4 sm:px-6 py-24">
       <Reveal className="mx-auto mb-14 max-w-[640px] text-center">
         {/* clean static badge */}
         <div className="mb-7 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] px-[14px] py-2 backdrop-blur-md">

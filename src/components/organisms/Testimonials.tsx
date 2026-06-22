@@ -27,7 +27,7 @@ const items = [
 
 export function Testimonials() {
   return (
-    <section className="relative z-[2] mx-auto max-w-[1180px] px-6 py-[46px]">
+    <section className="relative z-[2] mx-auto max-w-[1180px] px-4 sm:px-6 py-[46px]">
       <Reveal className="mb-[46px] text-center">
         <div className="mb-4 text-[13px] font-semibold uppercase tracking-[0.14em] text-accent-violet">
           Loved by tidy minds

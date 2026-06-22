@@ -97,7 +97,7 @@ export function ConverterSection() {
   }
 
   return (
-    <section id="convert" className="relative z-[2] mx-auto max-w-[1180px] px-6 py-16">
+    <section id="convert" className="relative z-[2] mx-auto max-w-[1180px] px-4 sm:px-6 py-16">
       {/* distinct gradient field behind the console */}
       <div className="pointer-events-none absolute inset-x-0 top-1/2 -z-10 mx-auto h-[480px] max-w-[900px] -translate-y-1/2 rounded-[40px] bg-[radial-gradient(60%_60%_at_30%_50%,rgba(78,205,196,0.10),transparent_70%),radial-gradient(60%_60%_at_80%_50%,rgba(155,89,182,0.12),transparent_70%)]" />
 

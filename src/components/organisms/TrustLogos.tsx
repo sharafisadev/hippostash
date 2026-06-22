@@ -8,7 +8,7 @@ const logos = [
 
 export function TrustLogos() {
   return (
-    <section className="relative z-[2] mx-auto max-w-[1180px] px-6 pb-5 pt-7 text-center">
+    <section className="relative z-[2] mx-auto max-w-[1180px] px-4 sm:px-6 pb-5 pt-7 text-center">
       <div className="mb-[30px] text-[13px] font-semibold uppercase tracking-[0.14em] text-white/40">
         Trusted to keep documents safe for thousands
       </div>

@@ -32,7 +32,7 @@ export function FAQ() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="relative z-[2] mx-auto max-w-[840px] px-6 py-12">
+    <section id="faq" className="relative z-[2] mx-auto max-w-[840px] px-4 sm:px-6 py-12">
       <Reveal className="mb-12 text-center">
         <div className="mb-4 text-[13px] font-semibold uppercase tracking-[0.14em] text-accent-cyan">
           FAQ

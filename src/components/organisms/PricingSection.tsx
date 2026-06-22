@@ -67,7 +67,7 @@ export function PricingSection() {
   const { open } = useAuth();
 
   return (
-    <section id="pricing" className="relative z-[2] mx-auto max-w-[1180px] px-6 pb-[70px] pt-[50px]">
+    <section id="pricing" className="relative z-[2] mx-auto max-w-[1180px] px-4 sm:px-6 pb-[70px] pt-[50px]">
       <Reveal className="mb-[38px] text-center">
         <div className="mb-4 text-[13px] font-semibold uppercase tracking-[0.14em] text-accent-cyan">
           Pricing

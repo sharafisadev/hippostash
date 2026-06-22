@@ -51,7 +51,7 @@ const stats = [
 
 export function Stats() {
   return (
-    <section className="relative z-[2] mx-auto max-w-[1180px] px-6 pb-[70px] pt-[30px]">
+    <section className="relative z-[2] mx-auto max-w-[1180px] px-4 sm:px-6 pb-[70px] pt-[30px]">
       <Reveal>
         <div className="lq relative grid grid-cols-2 gap-5 overflow-hidden rounded-[24px] px-[30px] py-[46px] md:grid-cols-4">
           <div className="absolute -top-[60px] left-[40%] h-[240px] w-[380px] rounded-full bg-[radial-gradient(circle,rgba(78,205,196,0.2),transparent_65%)] blur-[34px]" />

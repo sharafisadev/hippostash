@@ -31,7 +31,7 @@ const columns = [
 export function Footer() {
   return (
     <footer className="relative z-[2] overflow-hidden border-t border-white/[0.07]">
-      <div className="relative mx-auto max-w-[1180px] px-6 pb-[30px] pt-[56px]">
+      <div className="relative mx-auto max-w-[1180px] px-4 sm:px-6 pb-[30px] pt-[56px]">
         <div className="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
           <div>
             <div className="mb-4 flex items-center gap-2.5">

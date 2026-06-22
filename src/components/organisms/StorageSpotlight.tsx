@@ -38,7 +38,7 @@ export function StorageSpotlight() {
   };
 
   return (
-    <section id="storage" className="relative z-[2] mx-auto max-w-[1180px] px-6 py-16">
+    <section id="storage" className="relative z-[2] mx-auto max-w-[1180px] overflow-hidden px-4 sm:px-6 py-16">
       <div
         className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[420px] w-[680px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[60px]"
         style={{ background: user ? "radial-gradient(circle,rgba(78,205,196,0.14),transparent 70%)" : "radial-gradient(circle,rgba(155,89,182,0.14),transparent 70%)" }}

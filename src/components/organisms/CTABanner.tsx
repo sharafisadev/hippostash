@@ -5,7 +5,7 @@ import { Reveal } from "@/components/molecules/Reveal";
 
 export function CTABanner() {
   return (
-    <section id="get-started" className="relative z-[2] mx-auto max-w-[1180px] px-6 pb-[90px] pt-10">
+    <section id="get-started" className="relative z-[2] mx-auto max-w-[1180px] px-4 sm:px-6 pb-[90px] pt-10">
       <Reveal>
         <div className="lq relative overflow-hidden rounded-[28px] px-10 py-20 text-center">
           <div className="absolute -top-20 left-1/2 h-[380px] w-[600px] -translate-x-1/2 animate-pulse-glow rounded-full bg-[radial-gradient(circle,rgba(155,89,182,0.45),rgba(78,205,196,0.2)_50%,transparent_72%)] blur-[42px]" />

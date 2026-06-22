@@ -18,6 +18,7 @@
   }
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
   body {
     @apply bg-bg font-sans text-white antialiased;
@@ -28,7 +29,7 @@
       var(--bg) 100%
     );
     min-height: 100vh;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
   ::selection {
     background: rgba(78, 205, 196, 0.32);
