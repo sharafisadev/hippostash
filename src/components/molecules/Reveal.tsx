@@ -2,20 +2,26 @@
 
 import { motion, type Variants } from "framer-motion";
 
+// Smooth, modern entrance: fade + rise + scale + blur-out, easeOutExpo.
+const EASE = [0.16, 1, 0.3, 1] as const;
+
 const variants: Variants = {
-  hidden: { opacity: 0, y: 24, scale: 0.98 },
-  show: { opacity: 1, y: 0, scale: 1 },
+  hidden: { opacity: 0, y: 44, scale: 0.96, filter: "blur(12px)" },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    filter: "blur(0px)",
+    transition: { duration: 0.85, ease: EASE },
+  },
 };
 
 interface RevealProps {
   children: React.ReactNode;
   delay?: number;
   className?: string;
-  /** Render as a list container that staggers its Reveal children. */
-  stagger?: boolean;
 }
 
-/** Fade-up + scale on scroll into view. */
 export function Reveal({ children, delay = 0, className }: RevealProps) {
   return (
     <motion.div
@@ -23,13 +29,18 @@ export function Reveal({ children, delay = 0, className }: RevealProps) {
       variants={variants}
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.5, ease: "easeOut", delay }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ delay }}
     >
       {children}
     </motion.div>
   );
 }
+
+const groupVariants: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
+};
 
 export function StaggerGroup({
   children,
@@ -41,10 +52,10 @@ export function StaggerGroup({
   return (
     <motion.div
       className={className}
+      variants={groupVariants}
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ staggerChildren: 0.08 }}
+      viewport={{ once: true, margin: "-80px" }}
     >
       {children}
     </motion.div>

@@ -1,10 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Bricolage_Grotesque, Manrope } from "next/font/google";
 import "@/styles/globals.css";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 
-const inter = Inter({
+const display = Bricolage_Grotesque({
   subsets: ["latin"],
-  variable: "--font-inter",
+  weight: ["500", "600", "700", "800"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+const body = Manrope({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-body",
   display: "swap",
 });
 
@@ -13,23 +22,22 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Hippo Stash — Secure Document Storage & Conversion",
+    default: "Hippo Stash — All your documents, one secure stash",
     template: "%s · Hippo Stash",
   },
   description:
-    "Manage all your important documents in one secure place. Store, convert, preview, and protect your files with Hippo Stash.",
+    "Save papers, IDs, bills and certificates effortlessly — then convert any file to the format you need, in seconds. Wrapped in bank-grade security.",
   keywords: [
     "document storage",
     "file conversion",
     "secure cloud storage",
-    "PDF",
+    "PDF converter",
     "Hippo Stash",
   ],
-  authors: [{ name: "Hippo Stash" }],
   openGraph: {
-    title: "Hippo Stash — Secure Document Storage & Conversion",
+    title: "Hippo Stash — All your documents, one secure stash",
     description:
-      "Manage all your important documents in one secure place.",
+      "Store, organize and convert all your important documents in one secure place.",
     url: siteUrl,
     siteName: "Hippo Stash",
     type: "website",
@@ -37,13 +45,13 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Hippo Stash",
-    description: "Manage all your important documents in one secure place.",
+    description: "All your documents, one secure stash.",
   },
-  icons: { icon: "/favicon.svg" },
+  icons: { icon: "/hippo-icon.png" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0B0B14",
+  themeColor: "#08080F",
   width: "device-width",
   initialScale: 1,
 };
@@ -54,8 +62,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} dark`}>
-      <body>{children}</body>
+    <html lang="en" className={`${display.variable} ${body.variable} dark`}>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }
