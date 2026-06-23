@@ -9,6 +9,14 @@ export interface StoredFile {
   size: number;
   createdAt: string;
   path: string;
+  category: string;
+  tags: string[];
+}
+
+export interface UploadMeta {
+  name?: string;
+  category?: string;
+  tags?: string[];
 }
 
 async function authHeaders(): Promise<Record<string, string>> {
@@ -17,7 +25,7 @@ async function authHeaders(): Promise<Record<string, string>> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-/** The signed-in user's private files, via the secure /api/files route. */
+/** The signed-in user's private files (with metadata), via /api/files. */
 export function useStorage() {
   const { user } = useAuth();
   const [files, setFiles] = useState<StoredFile[]>([]);
@@ -48,14 +56,13 @@ export function useStorage() {
   }, [user, refresh]);
 
   const upload = useCallback(
-    async (file: File) => {
+    async (file: File, meta?: UploadMeta) => {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/files", {
-        method: "POST",
-        headers: await authHeaders(),
-        body: fd,
-      });
+      if (meta?.name) fd.append("name", meta.name);
+      if (meta?.category) fd.append("category", meta.category);
+      if (meta?.tags?.length) fd.append("tags", meta.tags.join(","));
+      const res = await fetch("/api/files", { method: "POST", headers: await authHeaders(), body: fd });
       const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Upload failed.");
       await refresh();
@@ -77,36 +84,26 @@ export function useStorage() {
     [refresh]
   );
 
-  const rename = useCallback(
-    async (path: string, name: string) => {
+  const updateMeta = useCallback(
+    async (path: string, meta: UploadMeta) => {
       const res = await fetch("/api/files", {
         method: "PATCH",
         headers: { ...(await authHeaders()), "Content-Type": "application/json" },
-        body: JSON.stringify({ path, name }),
+        body: JSON.stringify({ path, ...meta }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Rename failed.");
+      if (!res.ok) throw new Error(data.error ?? "Update failed.");
       await refresh();
     },
     [refresh]
   );
 
   const previewUrl = useCallback(async (path: string): Promise<string | null> => {
-    const res = await fetch(`/api/files?sign=${encodeURIComponent(path)}`, {
-      headers: await authHeaders(),
-    });
+    const res = await fetch(`/api/files?sign=${encodeURIComponent(path)}`, { headers: await authHeaders() });
     const data = (await res.json()) as { url?: string };
     return data.url ?? null;
   }, []);
 
-  const preview = useCallback(async (path: string) => {
-    const res = await fetch(`/api/files?sign=${encodeURIComponent(path)}`, {
-      headers: await authHeaders(),
-    });
-    const data = (await res.json()) as { url?: string };
-    if (data.url) window.open(data.url, "_blank", "noopener");
-  }, []);
-
   const used = files.reduce((s, f) => s + f.size, 0);
-  return { files, used, loading, error, refresh, upload, remove, rename, preview, previewUrl };
+  return { files, used, loading, error, refresh, upload, remove, updateMeta, previewUrl };
 }

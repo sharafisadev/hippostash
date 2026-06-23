@@ -46,28 +46,18 @@ export function StorageSpotlight() {
 
       <AnimatePresence mode="wait">
         {user ? (
-          <motion.div key="open" {...enter} className="grid items-center gap-16 md:grid-cols-2">
-            <div>
+          <motion.div key="open" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
+            <div className="mb-8 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-accent-cyan/30 bg-accent-cyan/[0.08] px-3.5 py-1.5 text-[12px] font-semibold uppercase tracking-[0.12em] text-accent-cyan">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent-cyan" /> Signed in
+                <span className="h-1.5 w-1.5 rounded-full bg-accent-cyan" /> Your stash
               </div>
-              <h2 className="m-0 mb-[18px] font-display text-[clamp(30px,3.8vw,46px)] font-bold leading-[1.06] tracking-[-0.03em]">
-                Your stash is open.
+              <h2 className="m-0 font-display text-[clamp(30px,4.4vw,48px)] font-bold leading-[1.05] tracking-[-0.03em]">
+                Your workspace.
               </h2>
-              <p className="m-0 mb-7 text-[17px] leading-[1.6] text-white/55">
-                Welcome back. Upload, preview and manage your documents right here —
-                private to your account and synced to the cloud.
+              <p className="mx-auto mt-4 max-w-[520px] text-[16px] leading-[1.6] text-white/55">
+                Upload, organize, preview and manage your documents — private to
+                your account and synced to the cloud.
               </p>
-              <div className="flex flex-col gap-3.5">
-                {points.map((p) => (
-                  <div key={p} className="flex items-center gap-3">
-                    <span className="grid h-6 w-6 flex-none place-items-center rounded-full border border-accent-cyan/40 bg-accent-cyan/[0.18]">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--a1)" strokeWidth="3"><path d="M20 6L9 17l-5-5" /></svg>
-                    </span>
-                    <span className="text-[16px] text-white/[0.82]">{p}</span>
-                  </div>
-                ))}
-              </div>
             </div>
             <StorageDashboard />
           </motion.div>
