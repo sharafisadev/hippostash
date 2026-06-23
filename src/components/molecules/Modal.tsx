@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useScrollLock } from "@/lib/hooks/useScrollLock";
 
 interface ModalProps {
   open: boolean;
@@ -18,15 +19,12 @@ export function Modal({ open, onClose, title, children, size = "sm" }: ModalProp
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  useScrollLock(open);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
+    return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
   if (!mounted) return null;

@@ -59,12 +59,18 @@
       rgba(var(--ink-rgb), 0.075),
       rgba(var(--ink-rgb), 0.02)
     );
-    backdrop-filter: blur(12px) saturate(135%);
-    -webkit-backdrop-filter: blur(12px) saturate(135%);
+    backdrop-filter: blur(9px) saturate(130%);
+    -webkit-backdrop-filter: blur(9px) saturate(130%);
     border: 1px solid rgba(var(--ink-rgb), 0.1);
     box-shadow:
       inset 0 1px 0 rgba(var(--ink-rgb), 0.18),
       0 18px 48px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Skip painting off-screen sections — big paint/scroll win on long pages. */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 600px;
   }
 
   .grid-dots {

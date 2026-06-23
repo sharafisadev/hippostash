@@ -22,15 +22,15 @@ const columns = [
   {
     title: "Resources",
     links: [
-      { href: "/help#help", label: "Help Center" },
-      { href: "/help#faq", label: "FAQ" },
+      { href: "/company#help", label: "Help Center" },
+      { href: "/company#faq", label: "FAQ" },
     ],
   },
   {
     title: "Legal",
     links: [
-      { href: "/legal#privacy", label: "Privacy Policy" },
-      { href: "/legal#terms", label: "Terms of Service" },
+      { href: "/company#privacy", label: "Privacy Policy" },
+      { href: "/company#terms", label: "Terms of Service" },
     ],
   },
 ];

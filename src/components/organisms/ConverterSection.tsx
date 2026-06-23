@@ -194,7 +194,7 @@ export function ConverterSection() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -16, height: 0 }}
                       transition={{ duration: 0.22 }}
-                      className="flex items-center gap-3 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2.5"
+                      className="flex h-[58px] items-center gap-3 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3"
                     >
                       <FileGlyph format={glyphFor(it.file.name)} size={28} showLabel={false} />
                       <div className="min-w-0 flex-1">
@@ -225,6 +225,9 @@ export function ConverterSection() {
                     </motion.div>
                   ))}
                 </AnimatePresence>
+                {qPageCount > 1 && Array.from({ length: Math.max(0, Q_SIZE - pageItems.length) }).map((_, i) => (
+                  <div key={`qph-${i}`} aria-hidden className="h-[58px]" />
+                ))}
                 {items.length === 0 && (
                   <p className="py-6 text-center font-mono text-xs text-white/30">no files queued yet</p>
                 )}

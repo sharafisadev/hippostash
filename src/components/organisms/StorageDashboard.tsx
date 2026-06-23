@@ -207,17 +207,20 @@ export function StorageDashboard() {
                 {pageItems.map((f) => (
                   <motion.div key={f.path} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2 }}
                     onClick={() => setDetails(f)}
-                    className="group cursor-pointer rounded-[14px] border border-white/[0.06] bg-white/[0.03] p-3.5 transition-colors hover:border-white/20">
+                    className="group h-[150px] cursor-pointer overflow-hidden rounded-[14px] border border-white/[0.06] bg-white/[0.03] p-3.5 transition-colors hover:border-white/20">
                     <div className="mb-3 flex items-start justify-between">
                       <FileGlyph format={glyphFor(f.name)} size={36} showLabel={false} />
                       <div className="opacity-0 transition-opacity group-hover:opacity-100"><FileActions f={f} /></div>
                     </div>
                     <div className="truncate text-sm font-medium text-white">{f.name}</div>
                     <div className="mt-0.5 text-xs text-white/40">{formatBytes(f.size)}</div>
-                    {f.category && <span className="mt-2 inline-block rounded-full bg-accent-cyan/10 px-2 py-0.5 text-[10px] font-medium text-accent-cyan">{f.category}</span>}
+                    {f.category && <span className="mt-2 inline-block max-w-full truncate rounded-full bg-accent-cyan/10 px-2 py-0.5 text-[10px] font-medium text-accent-cyan">{f.category}</span>}
                   </motion.div>
                 ))}
               </AnimatePresence>
+              {pageCount > 1 && Array.from({ length: Math.max(0, pageSize - pageItems.length) }).map((_, i) => (
+                <div key={`ph-${i}`} aria-hidden className="h-[150px] rounded-[14px] border border-transparent" />
+              ))}
             </div>
           ) : (
             <div className="flex flex-col gap-2">
@@ -225,7 +228,7 @@ export function StorageDashboard() {
                 {pageItems.map((f) => (
                   <motion.div key={f.path} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.2 }}
                     onClick={() => setDetails(f)}
-                    className="flex cursor-pointer items-center gap-3 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 hover:border-white/20">
+                    className="flex h-[58px] cursor-pointer items-center gap-3 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 hover:border-white/20">
                     <FileGlyph format={glyphFor(f.name)} size={30} showLabel={false} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-white">{f.name}</div>
@@ -235,6 +238,9 @@ export function StorageDashboard() {
                   </motion.div>
                 ))}
               </AnimatePresence>
+              {pageCount > 1 && Array.from({ length: Math.max(0, pageSize - pageItems.length) }).map((_, i) => (
+                <div key={`ph-${i}`} aria-hidden className="h-[58px]" />
+              ))}
             </div>
           )}
         </div>

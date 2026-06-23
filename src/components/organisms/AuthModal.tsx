@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { getSupabase } from "@/lib/supabase/client";
+import { useScrollLock } from "@/lib/hooks/useScrollLock";
 import type { AuthMode } from "@/components/providers/AuthProvider";
+
+// Google sign-in is hidden until a branded OAuth app is configured (its consent
+// screen otherwise shows the raw Supabase project URL). Set
+// NEXT_PUBLIC_GOOGLE_AUTH=1 once Google Cloud + Supabase are branded.
+const GOOGLE_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH === "1";
 
 interface AuthModalProps {
   openState: boolean;
@@ -32,15 +38,12 @@ export function AuthModal({
   const [notice, setNotice] = useState<string | null>(null);
 
   // lock background scroll while the popup is open
+  useScrollLock(openState);
   useEffect(() => {
     if (!openState) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
+    return () => window.removeEventListener("keydown", onKey);
   }, [openState, onClose]);
 
   function reset() {
@@ -186,15 +189,19 @@ export function AuthModal({
                 </button>
               </form>
 
-              <div className="my-4 flex items-center gap-3 text-[11px] text-white/35">
-                <span className="h-px flex-1 bg-white/10" /> or continue with
-                <span className="h-px flex-1 bg-white/10" />
-              </div>
+              {GOOGLE_ENABLED && (
+                <>
+                  <div className="my-4 flex items-center gap-3 text-[11px] text-white/35">
+                    <span className="h-px flex-1 bg-white/10" /> or continue with
+                    <span className="h-px flex-1 bg-white/10" />
+                  </div>
 
-              <button onClick={() => social("google")} className="flex h-11 w-full items-center justify-center gap-2.5 rounded-[12px] border border-white/10 bg-white/[0.04] text-sm font-medium text-white/90 transition-colors hover:bg-white/[0.08]">
-                <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#FFC107" d="M21.8 10.2H12v3.8h5.6C17 16.4 14.8 18 12 18a6 6 0 1 1 0-12c1.5 0 2.9.6 4 1.5l2.7-2.7A9.8 9.8 0 0 0 12 2a10 10 0 1 0 9.8 8.2z" /><path fill="#FF3D00" d="M3.2 7.3l3.1 2.3A6 6 0 0 1 12 6c1.5 0 2.9.6 4 1.5l2.7-2.7A9.8 9.8 0 0 0 12 2 10 10 0 0 0 3.2 7.3z" /><path fill="#4CAF50" d="M12 22c2.7 0 5.1-1 6.9-2.7l-3.2-2.7A6 6 0 0 1 6.4 14l-3.2 2.5A10 10 0 0 0 12 22z" /><path fill="#1976D2" d="M21.8 10.2H12v3.8h5.6a6 6 0 0 1-2 2.6l3.2 2.7c1.9-1.8 3-4.4 3-7.5 0-.6-.1-1.1-.2-1.6z" /></svg>
-                Continue with Google
-              </button>
+                  <button onClick={() => social("google")} className="flex h-11 w-full items-center justify-center gap-2.5 rounded-[12px] border border-white/10 bg-white/[0.04] text-sm font-medium text-white/90 transition-colors hover:bg-white/[0.08]">
+                    <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#FFC107" d="M21.8 10.2H12v3.8h5.6C17 16.4 14.8 18 12 18a6 6 0 1 1 0-12c1.5 0 2.9.6 4 1.5l2.7-2.7A9.8 9.8 0 0 0 12 2a10 10 0 1 0 9.8 8.2z" /><path fill="#FF3D00" d="M3.2 7.3l3.1 2.3A6 6 0 0 1 12 6c1.5 0 2.9.6 4 1.5l2.7-2.7A9.8 9.8 0 0 0 12 2 10 10 0 0 0 3.2 7.3z" /><path fill="#4CAF50" d="M12 22c2.7 0 5.1-1 6.9-2.7l-3.2-2.7A6 6 0 0 1 6.4 14l-3.2 2.5A10 10 0 0 0 12 22z" /><path fill="#1976D2" d="M21.8 10.2H12v3.8h5.6a6 6 0 0 1-2 2.6l3.2 2.7c1.9-1.8 3-4.4 3-7.5 0-.6-.1-1.1-.2-1.6z" /></svg>
+                    Continue with Google
+                  </button>
+                </>
+              )}
 
               <p className="mt-5 text-center text-[13px] text-white/45">
                 {isLogin ? "Don't have an account? " : "Already have an account? "}

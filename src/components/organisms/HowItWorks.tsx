@@ -28,7 +28,7 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="relative z-[2] mx-auto max-w-[1180px] px-4 sm:px-6 py-12">
+    <section className="cv-auto relative z-[2] mx-auto max-w-[1180px] px-4 sm:px-6 py-12">
       <Reveal className="mb-[54px] text-center">
         <div className="mb-4 text-[13px] font-semibold uppercase tracking-[0.14em] text-accent-violet">
           How it works

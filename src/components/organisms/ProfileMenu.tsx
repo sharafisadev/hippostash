@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { getSupabase } from "@/lib/supabase/client";
 import { Modal } from "@/components/molecules/Modal";
+import { Toggle } from "@/components/atoms/Toggle";
 
 function scrollTo(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -111,13 +112,7 @@ function ProfileSettings({ onSignOut }: { onSignOut: () => void }) {
         <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/40">Preferences</div>
         <div className="flex items-center justify-between py-1.5">
           <span className="text-sm text-white/80">Email notifications</span>
-          <button
-            onClick={() => setEmailNotif((v) => !v)}
-            className={`relative h-6 w-11 rounded-full transition-colors ${emailNotif ? "bg-accent-cyan" : "bg-white/15"}`}
-            aria-pressed={emailNotif}
-          >
-            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${emailNotif ? "translate-x-[22px]" : "translate-x-0.5"}`} />
-          </button>
+          <Toggle checked={emailNotif} onChange={setEmailNotif} label="Email notifications" />
         </div>
         <div className="flex items-center justify-between py-1.5 text-white/40">
           <span className="text-sm">Theme</span>
