@@ -121,8 +121,8 @@ export function Navbar() {
                 href={`#${l.id}`}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "block rounded-[12px] px-3.5 py-3 text-[15px] font-medium transition-colors",
-                  active === l.id ? "bg-white/[0.08] text-white" : "text-white/65 hover:bg-white/5 hover:text-white"
+                  "block rounded-[12px] px-3.5 py-3 text-[16px] font-semibold transition-colors",
+                  active === l.id ? "bg-white/[0.1] text-white" : "text-white/90 hover:bg-white/5 hover:text-white"
                 )}
               >
                 {l.label}

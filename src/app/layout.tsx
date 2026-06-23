@@ -3,6 +3,7 @@ import { Bricolage_Grotesque, Manrope } from "next/font/google";
 import "@/styles/globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
+import { IntroLoader } from "@/components/organisms/IntroLoader";
 
 const display = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -110,6 +111,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <SmoothScroll />
+        <IntroLoader />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

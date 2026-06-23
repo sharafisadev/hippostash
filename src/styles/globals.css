@@ -117,6 +117,23 @@
   }
 }
 
+/* ── Micro-interactions ── */
+.btn-primary:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* ── Logo idle animation (mostly still, occasional wiggle) ── */
+.hippo-idle {
+  animation: hippoIdle 7s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+@keyframes hippoIdle {
+  0%, 90%, 100% { transform: translateY(0) rotate(0deg); }
+  92% { transform: translateY(-3px) rotate(-7deg); }
+  95% { transform: translateY(-3px) rotate(7deg); }
+  98% { transform: translateY(0) rotate(0deg); }
+}
+
 /* ── Hippo mascot loader ── */
 .hippo-run {
   animation: hippoBob 0.7s ease-in-out infinite;

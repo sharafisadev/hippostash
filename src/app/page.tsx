@@ -25,9 +25,9 @@ export default function HomePage() {
         <FormatsMarquee />
         <TrustLogos />
         <FeatureGrid />
-        <StorageSpotlight />
         <HowItWorks />
         <ConverterSection />
+        <StorageSpotlight />
         <Stats />
         <Security />
         <PricingSection />

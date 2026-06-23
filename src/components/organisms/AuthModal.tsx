@@ -191,16 +191,10 @@ export function AuthModal({
                 <span className="h-px flex-1 bg-white/10" />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => social("google")} className="flex h-10 items-center justify-center gap-2 rounded-[12px] border border-white/10 bg-white/[0.04] text-sm font-medium text-white/85 transition-colors hover:bg-white/[0.08]">
-                  <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#FFC107" d="M21.8 10.2H12v3.8h5.6C17 16.4 14.8 18 12 18a6 6 0 1 1 0-12c1.5 0 2.9.6 4 1.5l2.7-2.7A9.8 9.8 0 0 0 12 2a10 10 0 1 0 9.8 8.2z" /><path fill="#FF3D00" d="M3.2 7.3l3.1 2.3A6 6 0 0 1 12 6c1.5 0 2.9.6 4 1.5l2.7-2.7A9.8 9.8 0 0 0 12 2 10 10 0 0 0 3.2 7.3z" /><path fill="#4CAF50" d="M12 22c2.7 0 5.1-1 6.9-2.7l-3.2-2.7A6 6 0 0 1 6.4 14l-3.2 2.5A10 10 0 0 0 12 22z" /><path fill="#1976D2" d="M21.8 10.2H12v3.8h5.6a6 6 0 0 1-2 2.6l3.2 2.7c1.9-1.8 3-4.4 3-7.5 0-.6-.1-1.1-.2-1.6z" /></svg>
-                  Google
-                </button>
-                <button onClick={() => social("apple")} className="flex h-10 items-center justify-center gap-2 rounded-[12px] border border-white/10 bg-white/[0.04] text-sm font-medium text-white/85 transition-colors hover:bg-white/[0.08]">
-                  <svg width="15" height="15" viewBox="0 0 24 24" className="fill-white"><path d="M16.4 12.7c0-2.2 1.8-3.3 1.9-3.4-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.6.8-3.3.8-.7 0-1.7-.8-2.8-.8-1.5 0-2.8.8-3.6 2.2-1.5 2.7-.4 6.7 1.1 8.9.7 1.1 1.6 2.3 2.7 2.2 1.1 0 1.5-.7 2.8-.7s1.7.7 2.8.7c1.2 0 1.9-1.1 2.6-2.1.8-1.2 1.2-2.4 1.2-2.4s-2.2-.9-2.2-3.4zM14.3 6c.6-.7 1-1.7.9-2.7-.9 0-1.9.6-2.5 1.3-.5.6-1 1.6-.9 2.6 1 0 1.9-.5 2.5-1.2z" /></svg>
-                  Apple
-                </button>
-              </div>
+              <button onClick={() => social("google")} className="flex h-11 w-full items-center justify-center gap-2.5 rounded-[12px] border border-white/10 bg-white/[0.04] text-sm font-medium text-white/90 transition-colors hover:bg-white/[0.08]">
+                <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#FFC107" d="M21.8 10.2H12v3.8h5.6C17 16.4 14.8 18 12 18a6 6 0 1 1 0-12c1.5 0 2.9.6 4 1.5l2.7-2.7A9.8 9.8 0 0 0 12 2a10 10 0 1 0 9.8 8.2z" /><path fill="#FF3D00" d="M3.2 7.3l3.1 2.3A6 6 0 0 1 12 6c1.5 0 2.9.6 4 1.5l2.7-2.7A9.8 9.8 0 0 0 12 2 10 10 0 0 0 3.2 7.3z" /><path fill="#4CAF50" d="M12 22c2.7 0 5.1-1 6.9-2.7l-3.2-2.7A6 6 0 0 1 6.4 14l-3.2 2.5A10 10 0 0 0 12 22z" /><path fill="#1976D2" d="M21.8 10.2H12v3.8h5.6a6 6 0 0 1-2 2.6l3.2 2.7c1.9-1.8 3-4.4 3-7.5 0-.6-.1-1.1-.2-1.6z" /></svg>
+                Continue with Google
+              </button>
 
               <p className="mt-5 text-center text-[13px] text-white/45">
                 {isLogin ? "Don't have an account? " : "Already have an account? "}

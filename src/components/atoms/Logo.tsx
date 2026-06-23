@@ -16,7 +16,7 @@ export function Logo({ href = "#top", showWord = true, size = 30, className }: L
         alt="Hippo Stash"
         width={size}
         height={size}
-        className="block rounded-[8px]"
+        className="hippo-idle block rounded-[8px]"
         priority
       />
       {showWord && (
