@@ -26,13 +26,15 @@ export function useScrollLock(active: boolean) {
     body.style.width = "100%";
     body.style.overflow = "hidden";
     return () => {
-      body.style.position = prev.position;
+      // Restore scroll BEFORE removing position:fixed to avoid the 1-frame
+      // snap-to-top that happens when fixed is removed with a negative top.
       body.style.top = prev.top;
+      body.style.position = prev.position;
       body.style.left = prev.left;
       body.style.right = prev.right;
       body.style.width = prev.width;
       body.style.overflow = prev.overflow;
-      window.scrollTo(0, scrollY);
+      window.scrollTo({ top: scrollY, behavior: "instant" as ScrollBehavior });
     };
   }, [active]);
 }
