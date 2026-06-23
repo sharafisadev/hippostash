@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Logo } from "@/components/atoms/Logo";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -19,6 +19,10 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<string>("");
   const { user, open: openAuth, signOut } = useAuth();
+  // While a click-initiated smooth scroll is in flight, ignore scroll-spy so
+  // the indicator jumps straight to the target instead of chasing every
+  // section it passes (which reads as shaking).
+  const lockUntil = useRef(0);
 
   // scroll-spy: highlight the section currently in view
   useEffect(() => {
@@ -29,6 +33,7 @@ export function Navbar() {
 
     const io = new IntersectionObserver(
       (entries) => {
+        if (Date.now() < lockUntil.current) return;
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
@@ -39,6 +44,11 @@ export function Navbar() {
     sections.forEach((s) => io.observe(s));
     return () => io.disconnect();
   }, []);
+
+  const selectLink = (id: string) => {
+    setActive(id);
+    lockUntil.current = Date.now() + 900;
+  };
 
   return (
     <header className="fixed left-1/2 top-[14px] z-[60] w-[calc(100%-32px)] max-w-[1180px] -translate-x-1/2 sm:top-[18px] sm:w-[calc(100%-48px)]">
@@ -52,6 +62,7 @@ export function Navbar() {
               <a
                 key={l.id}
                 href={`#${l.id}`}
+                onClick={() => selectLink(l.id)}
                 className={cn(
                   "relative rounded-[10px] px-3.5 py-2 text-sm font-medium transition-colors",
                   on ? "text-white" : "text-white/55 hover:text-white"
@@ -61,7 +72,7 @@ export function Navbar() {
                   <motion.span
                     layoutId="nav-active"
                     className="absolute inset-0 -z-10 rounded-[10px] bg-white/[0.08]"
-                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                    transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                   />
                 )}
                 {l.label}
@@ -118,7 +129,7 @@ export function Navbar() {
               <a
                 key={l.id}
                 href={`#${l.id}`}
-                onClick={() => setOpen(false)}
+                onClick={() => { setOpen(false); selectLink(l.id); }}
                 className={cn(
                   "block rounded-[12px] px-3.5 py-3 text-[16px] font-semibold transition-colors",
                   active === l.id ? "bg-white/[0.1] text-white" : "text-white/90 hover:bg-white/5 hover:text-white"

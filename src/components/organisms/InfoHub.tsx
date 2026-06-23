@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -23,6 +23,9 @@ interface InfoHubProps {
 export function InfoHub({ current, eyebrow, title, intro, sections }: InfoHubProps) {
   const hub = getHub(current);
   const [active, setActive] = useState(sections[0]?.id ?? "");
+  // Ignore scroll-spy briefly after a click so the indicator jumps straight to
+  // the target instead of chasing every section it scrolls past.
+  const lockUntil = useRef(0);
 
   // Scroll-spy: highlight the section nearest the top of the viewport.
   useEffect(() => {
@@ -31,18 +34,32 @@ export function InfoHub({ current, eyebrow, title, intro, sections }: InfoHubPro
       .filter((el): el is HTMLElement => !!el);
     if (!els.length) return;
 
-    const onScroll = () => {
+    let raf = 0;
+    const compute = () => {
+      raf = 0;
+      if (Date.now() < lockUntil.current) return;
       const offset = 160; // clear the top bar
-      let current = els[0]!.id;
+      let id = els[0]!.id;
       for (const el of els) {
-        if (el.getBoundingClientRect().top - offset <= 0) current = el.id;
+        if (el.getBoundingClientRect().top - offset <= 0) id = el.id;
       }
-      setActive(current);
+      setActive(id);
     };
-    onScroll();
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(compute);
+    };
+    compute();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, [sections]);
+
+  const selectSection = (id: string) => {
+    setActive(id);
+    lockUntil.current = Date.now() + 900;
+  };
 
   // Land on the right section when arriving with a hash.
   useEffect(() => {
@@ -79,7 +96,7 @@ export function InfoHub({ current, eyebrow, title, intro, sections }: InfoHubPro
         </div>
 
         {/* mobile group/section pills */}
-        <MobileIndex current={current} active={active} />
+        <MobileIndex current={current} active={active} onSelect={selectSection} />
 
         <div className="grid gap-10 lg:grid-cols-[232px_1fr] lg:gap-14">
           {/* desktop grouped side index */}
@@ -98,7 +115,7 @@ export function InfoHub({ current, eyebrow, title, intro, sections }: InfoHubPro
                           <li key={s.id}>
                             <Link
                               href={href}
-                              onClick={() => isCurrent && setActive(s.id)}
+                              onClick={() => isCurrent && selectSection(s.id)}
                               className={`relative flex items-center rounded-[10px] px-3 py-2 text-sm transition-colors ${
                                 isActive ? "text-white" : "text-white/55 hover:text-white/85"
                               }`}
@@ -107,7 +124,7 @@ export function InfoHub({ current, eyebrow, title, intro, sections }: InfoHubPro
                                 <motion.span
                                   layoutId="hub-active"
                                   className="absolute inset-0 rounded-[10px] border border-accent-cyan/30 bg-accent-cyan/[0.12]"
-                                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                                  transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                                 />
                               )}
                               <span className="relative">{s.label}</span>
@@ -144,7 +161,7 @@ export function InfoHub({ current, eyebrow, title, intro, sections }: InfoHubPro
 }
 
 /** Horizontal, scrollable index for small screens. */
-function MobileIndex({ current, active }: { current: HubId; active: string }) {
+function MobileIndex({ current, active, onSelect }: { current: HubId; active: string; onSelect: (id: string) => void }) {
   const hub = getHub(current);
   return (
     <div className="mb-8 lg:hidden">
@@ -153,6 +170,7 @@ function MobileIndex({ current, active }: { current: HubId; active: string }) {
           <a
             key={s.id}
             href={`#${s.id}`}
+            onClick={() => onSelect(s.id)}
             className={`flex-none rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
               active === s.id
                 ? "border-accent-cyan/40 bg-accent-cyan/[0.14] text-accent-cyan"
