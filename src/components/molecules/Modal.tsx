@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,9 @@ interface ModalProps {
 }
 
 export function Modal({ open, onClose, title, children, size = "sm" }: ModalProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -25,11 +29,15 @@ export function Modal({ open, onClose, title, children, size = "sm" }: ModalProp
     };
   }, [open, onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  // Portal to <body> so the fixed overlay escapes any transformed ancestor
+  // (e.g. the navbar uses translate-x, which would otherwise trap `fixed`).
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[100] grid place-items-center p-4"
+          className="fixed inset-0 z-[100] grid place-items-center px-4 pb-4 pt-[88px] sm:pt-[96px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -65,6 +73,7 @@ export function Modal({ open, onClose, title, children, size = "sm" }: ModalProp
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

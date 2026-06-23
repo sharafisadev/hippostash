@@ -42,7 +42,7 @@ export function ProfileMenu() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.97 }}
               transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-              className="lq absolute right-0 z-20 mt-2 w-60 origin-top-right rounded-[16px] p-2"
+              className="lq absolute right-0 z-20 mt-2 w-60 origin-top-right rounded-[16px] bg-[#0f0f17]/95 p-2 shadow-[0_18px_48px_rgba(0,0,0,0.55)]"
             >
               <div className="flex items-center gap-3 rounded-[12px] px-2 py-2">
                 <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[linear-gradient(135deg,var(--a1),var(--a2))] text-xs font-bold text-[#0b0b14]">{initials}</span>

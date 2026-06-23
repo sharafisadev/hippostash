@@ -55,6 +55,7 @@ export function StorageDashboard() {
 
   const [pending, setPending] = useState<File[] | null>(null);
   const [pCategory, setPCategory] = useState("Papers");
+  const [pCategoryCustom, setPCategoryCustom] = useState("");
   const [pTags, setPTags] = useState("");
   const [pName, setPName] = useState("");
   const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
@@ -95,13 +96,15 @@ export function StorageDashboard() {
     setPending(arr);
     setPName(arr.length === 1 ? arr[0]!.name : "");
     setPCategory("Papers");
+    setPCategoryCustom("");
     setPTags("");
   }
 
   async function confirmUpload() {
     if (!pending) return;
     const arr = pending;
-    const meta = { category: pCategory, tags: pTags.split(",").map((t) => t.trim()).filter(Boolean) };
+    const category = pCategory === "Other" ? (pCategoryCustom.trim() || "Other") : pCategory;
+    const meta = { category, tags: pTags.split(",").map((t) => t.trim()).filter(Boolean) };
     setPending(null);
     setUploading({ done: 0, total: arr.length });
     let ok = 0;
@@ -271,6 +274,15 @@ export function StorageDashboard() {
             <select value={pCategory} onChange={(e) => setPCategory(e.target.value)} className="h-11 w-full rounded-[12px] border border-white/10 bg-[#0d0d16] px-3 text-sm text-white focus:outline-none">
               {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
+            {pCategory === "Other" && (
+              <input
+                autoFocus
+                value={pCategoryCustom}
+                onChange={(e) => setPCategoryCustom(e.target.value)}
+                placeholder="Enter a custom category…"
+                className="mt-2 h-11 w-full rounded-[12px] border border-accent-cyan/40 bg-black/30 px-3.5 text-sm text-white placeholder:text-white/25 focus:border-accent-cyan/60 focus:outline-none"
+              />
+            )}
           </div>
           <div>
             <label className="mb-1 block text-xs text-white/50">Tags <span className="text-white/30">(comma separated)</span></label>
@@ -290,10 +302,10 @@ export function StorageDashboard() {
 
       {/* preview modal */}
       <Modal open={!!preview} onClose={() => setPreview(null)} title={preview?.file.name} size="lg">
-        <div className="grid max-h-[78vh] min-h-[300px] place-items-center overflow-auto bg-black/30 p-3">
+        <div className="grid max-h-[calc(100dvh-150px)] min-h-[300px] place-items-center overflow-auto bg-black/30 p-3">
           {previewLoading || !preview?.url ? <HippoLoader size={52} label="Opening preview…" />
             : previewKind === "image" ? (/* eslint-disable-next-line @next/next/no-img-element */ <img src={preview.url} alt={preview.file.name} className="max-w-full rounded-[10px]" />)
-            : previewKind === "pdf" ? <iframe src={preview.url} title={preview.file.name} className="h-[74vh] w-full rounded-[10px] bg-white" />
+            : previewKind === "pdf" ? <iframe src={preview.url} title={preview.file.name} className="h-[calc(100dvh-180px)] w-full rounded-[10px] bg-white" />
             : <div className="p-10 text-center"><FileGlyph format={glyphFor(preview.file.name)} size={56} showLabel={false} className="mx-auto" /><p className="mt-4 text-sm text-white/55">No inline preview for this type.</p><a href={preview.url} download={preview.file.name} className="btn-primary mt-4 inline-flex rounded-[12px] px-5 py-2.5 text-sm">Download</a></div>}
         </div>
       </Modal>
@@ -308,14 +320,17 @@ function FileDetails({ file, onSave, onDelete, onPreview, onClose }: {
   onPreview: () => void;
   onClose: () => void;
 }) {
+  const isKnown = !!file.category && CATEGORIES.includes(file.category);
   const [name, setName] = useState(file.name);
-  const [category, setCategory] = useState(file.category || "Other");
+  const [category, setCategory] = useState(isKnown ? file.category : file.category ? "Other" : "Papers");
+  const [categoryCustom, setCategoryCustom] = useState(isKnown ? "" : file.category || "");
   const [tags, setTags] = useState(file.tags.join(", "));
   const [saving, setSaving] = useState(false);
 
   async function save() {
     setSaving(true);
-    await onSave(file.path, { name, category, tags: tags.split(",").map((t) => t.trim()).filter(Boolean) });
+    const cat = category === "Other" ? (categoryCustom.trim() || "Other") : category;
+    await onSave(file.path, { name, category: cat, tags: tags.split(",").map((t) => t.trim()).filter(Boolean) });
     setSaving(false);
     onClose();
   }
@@ -338,6 +353,15 @@ function FileDetails({ file, onSave, onDelete, onPreview, onClose }: {
         <select value={category} onChange={(e) => setCategory(e.target.value)} className="h-11 w-full rounded-[12px] border border-white/10 bg-[#0d0d16] px-3 text-sm text-white focus:outline-none">
           {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
+        {category === "Other" && (
+          <input
+            autoFocus
+            value={categoryCustom}
+            onChange={(e) => setCategoryCustom(e.target.value)}
+            placeholder="Enter a custom category…"
+            className="mt-2 h-11 w-full rounded-[12px] border border-accent-cyan/40 bg-black/30 px-3.5 text-sm text-white placeholder:text-white/25 focus:border-accent-cyan/60 focus:outline-none"
+          />
+        )}
       </div>
       <div>
         <label className="mb-1 block text-xs text-white/50">Tags</label>
