@@ -14,23 +14,23 @@ const columns = [
   {
     title: "Company",
     links: [
-      { href: "/company#about", label: "About" },
-      { href: "/company#story", label: "Our story" },
-      { href: "/company#security", label: "Security" },
+      { href: "/company/about", label: "About" },
+      { href: "/company/story", label: "Our story" },
+      { href: "/company/security", label: "Security" },
     ],
   },
   {
     title: "Resources",
     links: [
-      { href: "/company#help", label: "Help Center" },
-      { href: "/company#faq", label: "FAQ" },
+      { href: "/company/help", label: "Help Center" },
+      { href: "/company/faq", label: "FAQ" },
     ],
   },
   {
     title: "Legal",
     links: [
-      { href: "/company#privacy", label: "Privacy Policy" },
-      { href: "/company#terms", label: "Terms of Service" },
+      { href: "/company/privacy", label: "Privacy Policy" },
+      { href: "/company/terms", label: "Terms of Service" },
     ],
   },
 ];

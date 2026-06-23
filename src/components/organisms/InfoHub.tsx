@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
@@ -16,103 +16,28 @@ interface InfoHubProps {
   eyebrow: string;
   title: string;
   intro: string;
-  /** Every section; the active topic decides which are shown. */
   sections: HubContentSection[];
+  /** The section currently being viewed (matches a section id in HUBS). */
+  currentSection: string;
 }
 
-/** Which topic owns a given section id. */
-const groupOf = (sectionId: string): HubId =>
-  HUBS.find((h) => h.sections.some((s) => s.id === sectionId))?.id ?? HUBS[0]!.id;
+/** Which hub owns a given section id. */
+const groupOf = (sectionId: string) =>
+  HUBS.find((h) => h.sections.some((s) => s.id === sectionId)) ?? HUBS[0]!;
 
-/**
- * Topic-switching info layout: Company / Resources / Legal each open their own
- * view inside the same shell. Only one topic is shown at a time — no continuous
- * scroll across everything.
- */
-export function InfoHub({ eyebrow, title, intro, sections }: InfoHubProps) {
-  const [groupId, setGroupId] = useState<HubId>(HUBS[0]!.id);
-  const group = HUBS.find((h) => h.id === groupId)!;
-  const [active, setActive] = useState(group.sections[0]!.id);
-  const lockUntil = useRef(0);
-  const contentRef = useRef<HTMLDivElement>(null);
+export function InfoHub({ eyebrow, title, intro, sections, currentSection }: InfoHubProps) {
+  const router = useRouter();
 
-  const visibleSections = useMemo(() => {
-    const ids = new Set(group.sections.map((s) => s.id));
-    return sections.filter((s) => ids.has(s.id));
-  }, [group, sections]);
+  const currentGroup = groupOf(currentSection);
+  const activeContent = sections.find((s) => s.id === currentSection) ?? sections[0]!;
 
-  // Open the topic that owns the URL hash and scroll to it — on arrival and
-  // whenever the hash changes (e.g. footer links while already on the page).
-  useEffect(() => {
-    const go = (smooth: boolean) => {
-      const id = window.location.hash.slice(1);
-      if (!id || !sections.some((s) => s.id === id)) return;
-      setGroupId(groupOf(id));
-      setActive(id);
-      lockUntil.current = Date.now() + 1100;
-      // The topic's content mounts after the exit animation, so poll until the
-      // target section exists, then scroll to it.
-      let tries = 0;
-      const tryScroll = () => {
-        const el = document.getElementById(id);
-        if (el) {
-          el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
-        } else if (tries++ < 50) {
-          requestAnimationFrame(tryScroll);
-        }
-      };
-      requestAnimationFrame(tryScroll);
-    };
-    go(false);
-    const onHash = () => go(true);
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
-  }, [sections]);
-
-  // Scroll-spy within the active topic only.
-  useEffect(() => {
-    const els = group.sections
-      .map((s) => document.getElementById(s.id))
-      .filter((el): el is HTMLElement => !!el);
-    if (!els.length) return;
-    let raf = 0;
-    const compute = () => {
-      raf = 0;
-      if (Date.now() < lockUntil.current) return;
-      const offset = 140;
-      let id = els[0]!.id;
-      for (const el of els) {
-        if (el.getBoundingClientRect().top - offset <= 0) id = el.id;
-      }
-      setActive(id);
-    };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(compute);
-    };
-    compute();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, [group]);
-
-  const switchTopic = (id: HubId) => {
-    if (id === groupId) return;
-    const g = HUBS.find((h) => h.id === id)!;
-    setGroupId(id);
-    setActive(g.sections[0]!.id);
-    lockUntil.current = Date.now() + 700;
-    // bring the topic's content into view without a jarring jump
-    requestAnimationFrame(() => {
-      const top = (contentRef.current?.getBoundingClientRect().top ?? 0) + window.scrollY - 96;
-      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-    });
+  const navigate = (sectionId: string) => {
+    router.push(`/company/${sectionId}`);
   };
 
-  const selectSection = (id: string) => {
-    setActive(id);
-    lockUntil.current = Date.now() + 900;
+  const switchTopic = (hubId: HubId) => {
+    const hub = HUBS.find((h) => h.id === hubId)!;
+    router.push(`/company/${hub.sections[0]!.id}`);
   };
 
   return (
@@ -147,7 +72,7 @@ export function InfoHub({ eyebrow, title, intro, sections }: InfoHubProps) {
                 key={h.id}
                 onClick={() => switchTopic(h.id)}
                 className={`flex-none rounded-full border px-4 py-1.5 text-[13px] font-semibold transition-colors ${
-                  h.id === groupId
+                  h.id === currentGroup.id
                     ? "border-accent-cyan/45 bg-accent-cyan/[0.14] text-accent-cyan"
                     : "border-white/10 bg-white/[0.04] text-white/65"
                 }`}
@@ -158,17 +83,16 @@ export function InfoHub({ eyebrow, title, intro, sections }: InfoHubProps) {
           </div>
           {/* sub-section pills for the active topic */}
           <div className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {group.sections.map((s) => (
-              <a
+            {currentGroup.sections.map((s) => (
+              <button
                 key={s.id}
-                href={`#${s.id}`}
-                onClick={() => selectSection(s.id)}
+                onClick={() => navigate(s.id)}
                 className={`flex-none rounded-full px-3 py-1 text-[12px] font-medium transition-colors ${
-                  active === s.id ? "text-white" : "text-white/45"
+                  currentSection === s.id ? "text-white" : "text-white/45"
                 }`}
               >
                 {s.label}
-              </a>
+              </button>
             ))}
           </div>
         </div>
@@ -178,7 +102,7 @@ export function InfoHub({ eyebrow, title, intro, sections }: InfoHubProps) {
           <aside className="hidden lg:block">
             <nav className="sticky top-[110px] flex flex-col gap-2" aria-label="Topics">
               {HUBS.map((h) => {
-                const isCurrent = h.id === groupId;
+                const isCurrent = h.id === currentGroup.id;
                 return (
                   <div key={h.id}>
                     <button
@@ -201,13 +125,12 @@ export function InfoHub({ eyebrow, title, intro, sections }: InfoHubProps) {
                           className="overflow-hidden pl-2"
                         >
                           {h.sections.map((s) => {
-                            const isActive = active === s.id;
+                            const isActive = currentSection === s.id;
                             return (
                               <li key={s.id}>
-                                <a
-                                  href={`#${s.id}`}
-                                  onClick={() => selectSection(s.id)}
-                                  className={`relative flex items-center rounded-[8px] px-3 py-1.5 text-[13px] transition-colors ${
+                                <button
+                                  onClick={() => navigate(s.id)}
+                                  className={`relative flex w-full items-center rounded-[8px] px-3 py-1.5 text-left text-[13px] transition-colors ${
                                     isActive ? "text-white" : "text-white/50 hover:text-white/80"
                                   }`}
                                 >
@@ -219,7 +142,7 @@ export function InfoHub({ eyebrow, title, intro, sections }: InfoHubProps) {
                                     />
                                   )}
                                   <span className="relative">{s.label}</span>
-                                </a>
+                                </button>
                               </li>
                             );
                           })}
@@ -232,22 +155,17 @@ export function InfoHub({ eyebrow, title, intro, sections }: InfoHubProps) {
             </nav>
           </aside>
 
-          {/* content — only the active topic */}
-          <div ref={contentRef} className="min-w-0">
+          {/* content — only the active section */}
+          <div className="min-w-0">
             <AnimatePresence mode="wait">
               <motion.div
-                key={groupId}
+                key={currentSection}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col gap-14"
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               >
-                {visibleSections.map((s) => (
-                  <section key={s.id} id={s.id} className="scroll-mt-[104px]">
-                    {s.content}
-                  </section>
-                ))}
+                {activeContent.content}
               </motion.div>
             </AnimatePresence>
           </div>
