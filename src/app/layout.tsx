@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Manrope } from "next/font/google";
 import "@/styles/globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { ToastProvider } from "@/components/providers/ToastProvider";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
 import { IntroLoader } from "@/components/organisms/IntroLoader";
 
@@ -110,9 +111,11 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <SmoothScroll />
-        <IntroLoader />
-        <AuthProvider>{children}</AuthProvider>
+        <ToastProvider>
+          <SmoothScroll />
+          <IntroLoader />
+          <AuthProvider>{children}</AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );

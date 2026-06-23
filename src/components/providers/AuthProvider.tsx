@@ -10,6 +10,7 @@ import {
 import type { User } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase/client";
 import { AuthModal } from "@/components/organisms/AuthModal";
+import { useToast } from "@/components/providers/ToastProvider";
 
 export type AuthMode = "login" | "register";
 
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [mode, setMode] = useState<AuthMode>("login");
   const [opts, setOpts] = useState<OpenOptions>({});
+  const { toast } = useToast();
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -64,7 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     await getSupabase().auth.signOut();
     setUser(null);
-  }, []);
+    toast("Signed out.", "info");
+  }, [toast]);
 
   return (
     <AuthContext.Provider value={{ user, loading, open, close, signOut }}>
@@ -78,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         onModeChange={setMode}
         onSuccess={() => {
           setModalOpen(false);
+          toast("You're signed in 🦛", "success");
           // glide to the now-unlocked stash
           setTimeout(
             () =>

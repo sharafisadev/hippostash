@@ -6,6 +6,7 @@ import { useStorage, type StoredFile } from "@/lib/hooks/useStorage";
 import { FileGlyph } from "@/components/atoms/FileGlyph";
 import { HippoLoader } from "@/components/atoms/HippoLoader";
 import { Modal } from "@/components/molecules/Modal";
+import { useToast } from "@/components/providers/ToastProvider";
 import { fileKindFromName, formatBytes, cn } from "@/lib/utils";
 import type { FileKind } from "@/lib/types";
 
@@ -29,7 +30,21 @@ const Trash = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" 
 
 export function StorageDashboard() {
   const { files, used, loading, error, upload, remove, updateMeta, previewUrl } = useStorage();
+  const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const del = async (path: string) => {
+    try {
+      await remove(path);
+      toast("File deleted.", "info");
+    } catch {
+      toast("Couldn't delete file.", "error");
+    }
+  };
+  const saveMeta = async (path: string, meta: { name?: string; category?: string; tags?: string[] }) => {
+    await updateMeta(path, meta);
+    toast("Details saved.", "success");
+  };
 
   const [view, setView] = useState<"grid" | "list">("grid");
   const [tab, setTab] = useState<"all" | FileKind>("all");
@@ -98,7 +113,7 @@ export function StorageDashboard() {
       setUploading({ done: i + 1, total: arr.length });
     }
     setUploading(null);
-    if (ok) setMsg(`${ok} file${ok === 1 ? "" : "s"} added.`);
+    if (ok) toast(`${ok} file${ok === 1 ? "" : "s"} added to your stash.`, "success");
   }
 
   async function openPreview(f: StoredFile) {
@@ -115,7 +130,7 @@ export function StorageDashboard() {
     <div className="flex items-center gap-0.5">
       <button title="Preview" aria-label="Preview" onClick={(e) => { e.stopPropagation(); openPreview(f); }} className="grid h-7 w-7 place-items-center rounded-[8px] text-white/45 hover:bg-white/10 hover:text-white"><Eye /></button>
       <button title="Details" aria-label="Details" onClick={(e) => { e.stopPropagation(); setDetails(f); }} className="grid h-7 w-7 place-items-center rounded-[8px] text-white/45 hover:bg-white/10 hover:text-white"><Info /></button>
-      <button title="Delete" aria-label="Delete" onClick={(e) => { e.stopPropagation(); remove(f.path); }} className="grid h-7 w-7 place-items-center rounded-[8px] text-white/45 hover:bg-white/10 hover:text-file-pdf"><Trash /></button>
+      <button title="Delete" aria-label="Delete" onClick={(e) => { e.stopPropagation(); del(f.path); }} className="grid h-7 w-7 place-items-center rounded-[8px] text-white/45 hover:bg-white/10 hover:text-file-pdf"><Trash /></button>
     </div>
   );
 
@@ -270,7 +285,7 @@ export function StorageDashboard() {
 
       {/* details modal */}
       <Modal open={!!details} onClose={() => setDetails(null)} title="File details">
-        {details && <FileDetails key={details.path} file={details} onClose={() => setDetails(null)} onSave={updateMeta} onDelete={(p) => { remove(p); setDetails(null); }} onPreview={() => { const f = details; setDetails(null); openPreview(f); }} />}
+        {details && <FileDetails key={details.path} file={details} onClose={() => setDetails(null)} onSave={saveMeta} onDelete={(p) => { del(p); setDetails(null); }} onPreview={() => { const f = details; setDetails(null); openPreview(f); }} />}
       </Modal>
 
       {/* preview modal */}

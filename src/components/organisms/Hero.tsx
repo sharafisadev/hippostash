@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { HeroApp } from "@/components/organisms/HeroApp";
+import { HeroAura } from "@/components/organisms/HeroAura";
 
 const container = {
   hidden: {},
@@ -18,6 +19,7 @@ export function Hero() {
       id="top"
       className="relative z-[2] mx-auto max-w-[1200px] px-4 pb-12 pt-[132px] sm:px-6 sm:pt-[160px]"
     >
+      <HeroAura />
       <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
         {/* Left — copy */}
         <motion.div variants={container} initial="hidden" animate="show" className="text-center lg:text-left">

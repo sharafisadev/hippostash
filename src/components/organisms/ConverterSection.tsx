@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Reveal } from "@/components/molecules/Reveal";
 import { FileGlyph } from "@/components/atoms/FileGlyph";
 import { HippoLoader } from "@/components/atoms/HippoLoader";
+import { useToast } from "@/components/providers/ToastProvider";
 import { formatBytes, cn } from "@/lib/utils";
 
 const EXT: Record<string, string> = {
@@ -43,6 +44,7 @@ export function ConverterSection() {
   const [format, setFormat] = useState("PNG");
   const [converting, setConverting] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const { toast } = useToast();
 
   const addFiles = useCallback((list: FileList | null) => {
     const arr = Array.from(list ?? []);
@@ -74,6 +76,8 @@ export function ConverterSection() {
     const pending = items.filter((i) => i.status === "queued" || i.status === "error");
     if (!pending.length) return;
     setConverting(true);
+    let ok = 0;
+    let fail = 0;
 
     for (const item of pending) {
       setItems((prev) => prev.map((p) => (p.id === item.id ? { ...p, status: "converting", error: undefined } : p)));
@@ -88,17 +92,23 @@ export function ConverterSection() {
           result = await convertViaServer(item.file, format);
         }
         setItems((prev) => prev.map((p) => (p.id === item.id ? { ...p, status: "done", result } : p)));
+        ok++;
       } catch (e) {
+        fail++;
         setItems((prev) =>
           prev.map((p) => (p.id === item.id ? { ...p, status: "error", error: e instanceof Error ? e.message : "Failed" } : p))
         );
       }
     }
     setConverting(false);
+    if (ok) toast(`Converted ${ok} file${ok === 1 ? "" : "s"} ✓`, "success");
+    if (fail) toast(`${fail} file${fail === 1 ? "" : "s"} couldn't be converted.`, "error");
   }
 
   function downloadAll() {
-    items.filter((i) => i.result).forEach((i, idx) => {
+    const ready = items.filter((i) => i.result);
+    if (ready.length) toast(`Downloading ${ready.length} file${ready.length === 1 ? "" : "s"}…`, "info");
+    ready.forEach((i, idx) => {
       setTimeout(() => {
         const a = document.createElement("a");
         a.href = i.result!.url;
