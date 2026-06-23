@@ -35,7 +35,7 @@ export function Modal({ open, onClose, title, children, size = "sm" }: ModalProp
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[100] grid place-items-center px-4 pb-4 pt-[88px] sm:pt-[96px]"
+          className="fixed inset-0 z-[100] grid place-items-center px-4 pb-8 pt-[72px] sm:pb-10 sm:pt-[80px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

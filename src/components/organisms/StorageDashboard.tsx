@@ -11,7 +11,7 @@ import { fileKindFromName, formatBytes, cn } from "@/lib/utils";
 import type { FileKind } from "@/lib/types";
 
 const FREE_LIMIT = 1024 * 1024 * 1024; // 1 GB
-const CATEGORIES = ["Papers", "IDs", "Bills", "Payments", "Certificates", "Receipts", "Other"];
+const BASE_CATS = ["Papers", "IDs", "Bills", "Payments", "Certificates", "Receipts"];
 
 const glyphFor = (name: string) => (name.split(".").pop() || "ZIP").toUpperCase();
 const fmtDate = (s: string) => (s ? new Date(s).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—");
@@ -24,14 +24,93 @@ const TABS: { id: "all" | FileKind; label: string }[] = [
   { id: "other", label: "Other" },
 ];
 
-const Eye = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>;
-const Info = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 16v-4M12 8h.01" /></svg>;
-const Trash = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>;
+function Eye() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>; }
+function Info() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 16v-4M12 8h.01" /></svg>; }
+function Trash() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>; }
+
+function FileActions({ f, onPreview, onDetails, onDelete }: {
+  f: StoredFile;
+  onPreview: (f: StoredFile) => void;
+  onDetails: (f: StoredFile) => void;
+  onDelete: (f: StoredFile) => void;
+}) {
+  return (
+    <div className="flex items-center gap-0.5">
+      <button title="Preview" aria-label="Preview" onClick={(e) => { e.stopPropagation(); onPreview(f); }} className="grid h-7 w-7 place-items-center rounded-[8px] text-white/45 hover:bg-white/10 hover:text-white"><Eye /></button>
+      <button title="Details" aria-label="Details" onClick={(e) => { e.stopPropagation(); onDetails(f); }} className="grid h-7 w-7 place-items-center rounded-[8px] text-white/45 hover:bg-white/10 hover:text-white"><Info /></button>
+      <button title="Delete" aria-label="Delete" onClick={(e) => { e.stopPropagation(); onDelete(f); }} className="grid h-7 w-7 place-items-center rounded-[8px] text-white/45 hover:bg-white/10 hover:text-file-pdf"><Trash /></button>
+    </div>
+  );
+}
+
+/** Pill-based category picker. "+ Custom" creates a new category on the fly. */
+function CategoryPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const isCustom = value && !BASE_CATS.includes(value);
+  const [extras, setExtras] = useState<string[]>(isCustom ? [value] : []);
+  const [showInput, setShowInput] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  const all = [...BASE_CATS, ...extras];
+
+  const commit = () => {
+    const v = draft.trim();
+    if (v) {
+      if (!all.includes(v)) setExtras((prev) => [...prev, v]);
+      onChange(v);
+    }
+    setShowInput(false);
+    setDraft("");
+  };
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {all.map((c) => (
+        <button
+          key={c}
+          type="button"
+          onClick={() => onChange(c)}
+          className={cn(
+            "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            value === c
+              ? "border-accent-cyan/50 bg-accent-cyan/10 text-accent-cyan"
+              : "border-white/10 text-white/55 hover:text-white"
+          )}
+        >
+          {c}
+        </button>
+      ))}
+      {showInput ? (
+        <input
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); commit(); }
+            if (e.key === "Escape") { setShowInput(false); setDraft(""); }
+          }}
+          onBlur={commit}
+          placeholder="Category name…"
+          className="h-7 rounded-full border border-accent-cyan/40 bg-black/30 px-3 text-xs text-white placeholder:text-white/25 focus:outline-none"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowInput(true)}
+          className="rounded-full border border-dashed border-white/20 px-3 py-1 text-xs font-medium text-white/35 hover:border-white/40 hover:text-white/60"
+        >
+          + Custom
+        </button>
+      )}
+    </div>
+  );
+}
 
 export function StorageDashboard() {
   const { files, used, loading, error, upload, remove, updateMeta, previewUrl } = useStorage();
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [deleteTarget, setDeleteTarget] = useState<StoredFile | null>(null);
 
   const del = async (path: string) => {
     try {
@@ -41,6 +120,13 @@ export function StorageDashboard() {
       toast("Couldn't delete file.", "error");
     }
   };
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    await del(deleteTarget.path);
+    setDeleteTarget(null);
+  }
+
   const saveMeta = async (path: string, meta: { name?: string; category?: string; tags?: string[] }) => {
     await updateMeta(path, meta);
     toast("Details saved.", "success");
@@ -55,7 +141,6 @@ export function StorageDashboard() {
 
   const [pending, setPending] = useState<File[] | null>(null);
   const [pCategory, setPCategory] = useState("Papers");
-  const [pCategoryCustom, setPCategoryCustom] = useState("");
   const [pTags, setPTags] = useState("");
   const [pName, setPName] = useState("");
   const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
@@ -83,7 +168,7 @@ export function StorageDashboard() {
     return list;
   }, [files, tab, query, sort]);
 
-  const pageSize = view === "grid" ? 6 : 6; // 2 rows
+  const pageSize = 6; // 2 rows
   const pageCount = Math.max(1, Math.ceil(visible.length / pageSize));
   useEffect(() => { setPage(0); }, [tab, query, sort, view]);
   const pageItems = visible.slice(page * pageSize, page * pageSize + pageSize);
@@ -96,15 +181,13 @@ export function StorageDashboard() {
     setPending(arr);
     setPName(arr.length === 1 ? arr[0]!.name : "");
     setPCategory("Papers");
-    setPCategoryCustom("");
     setPTags("");
   }
 
   async function confirmUpload() {
     if (!pending) return;
     const arr = pending;
-    const category = pCategory === "Other" ? (pCategoryCustom.trim() || "Other") : pCategory;
-    const meta = { category, tags: pTags.split(",").map((t) => t.trim()).filter(Boolean) };
+    const meta = { category: pCategory, tags: pTags.split(",").map((t) => t.trim()).filter(Boolean) };
     setPending(null);
     setUploading({ done: 0, total: arr.length });
     let ok = 0;
@@ -128,14 +211,6 @@ export function StorageDashboard() {
   }
 
   const previewKind = preview ? fileKindFromName(preview.file.name) : "other";
-
-  const FileActions = ({ f }: { f: StoredFile }) => (
-    <div className="flex items-center gap-0.5">
-      <button title="Preview" aria-label="Preview" onClick={(e) => { e.stopPropagation(); openPreview(f); }} className="grid h-7 w-7 place-items-center rounded-[8px] text-white/45 hover:bg-white/10 hover:text-white"><Eye /></button>
-      <button title="Details" aria-label="Details" onClick={(e) => { e.stopPropagation(); setDetails(f); }} className="grid h-7 w-7 place-items-center rounded-[8px] text-white/45 hover:bg-white/10 hover:text-white"><Info /></button>
-      <button title="Delete" aria-label="Delete" onClick={(e) => { e.stopPropagation(); del(f.path); }} className="grid h-7 w-7 place-items-center rounded-[8px] text-white/45 hover:bg-white/10 hover:text-file-pdf"><Trash /></button>
-    </div>
-  );
 
   return (
     <div className="overflow-hidden rounded-[20px] border border-white/10 bg-[#0a0a12]/95 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
@@ -192,7 +267,7 @@ export function StorageDashboard() {
           onDrop={(e) => { e.preventDefault(); setDragging(false); onPicked(e.dataTransfer.files); }}
           className={cn("mb-4 cursor-pointer rounded-[12px] border border-dashed py-3 text-center text-xs transition-colors", dragging ? "border-accent-cyan/70 bg-accent-cyan/[0.06] text-white" : "border-white/12 text-white/40 hover:border-white/25")}
         >
-          {uploading ? <HippoLoader size={40} label={`Uploading ${uploading.done}/${uploading.total}…`} /> : "Drag & drop files here, or use “Add files”"}
+          {uploading ? <HippoLoader size={40} label={`Uploading ${uploading.done}/${uploading.total}…`} /> : 'Drag & drop files here, or use “Add files”'}
         </div>
 
         {/* files */}
@@ -210,7 +285,7 @@ export function StorageDashboard() {
                     className="group h-[150px] cursor-pointer overflow-hidden rounded-[14px] border border-white/[0.06] bg-white/[0.03] p-3.5 transition-colors hover:border-white/20">
                     <div className="mb-3 flex items-start justify-between">
                       <FileGlyph format={glyphFor(f.name)} size={36} showLabel={false} />
-                      <div className="opacity-0 transition-opacity group-hover:opacity-100"><FileActions f={f} /></div>
+                      <div className="opacity-0 transition-opacity group-hover:opacity-100"><FileActions f={f} onPreview={openPreview} onDetails={setDetails} onDelete={setDeleteTarget} /></div>
                     </div>
                     <div className="truncate text-sm font-medium text-white">{f.name}</div>
                     <div className="mt-0.5 text-xs text-white/40">{formatBytes(f.size)}</div>
@@ -234,7 +309,7 @@ export function StorageDashboard() {
                       <div className="truncate text-sm font-medium text-white">{f.name}</div>
                       <div className="text-xs text-white/40">{formatBytes(f.size)} · {fmtDate(f.createdAt)}{f.category && ` · ${f.category}`}</div>
                     </div>
-                    <FileActions f={f} />
+                    <FileActions f={f} onPreview={openPreview} onDetails={setDetails} onDelete={setDeleteTarget} />
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -276,19 +351,8 @@ export function StorageDashboard() {
             </div>
           )}
           <div>
-            <label className="mb-1 block text-xs text-white/50">Category</label>
-            <select value={pCategory} onChange={(e) => setPCategory(e.target.value)} className="h-11 w-full rounded-[12px] border border-white/10 bg-[#0d0d16] px-3 text-sm text-white focus:outline-none">
-              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            {pCategory === "Other" && (
-              <input
-                autoFocus
-                value={pCategoryCustom}
-                onChange={(e) => setPCategoryCustom(e.target.value)}
-                placeholder="Enter a custom category…"
-                className="mt-2 h-11 w-full rounded-[12px] border border-accent-cyan/40 bg-black/30 px-3.5 text-sm text-white placeholder:text-white/25 focus:border-accent-cyan/60 focus:outline-none"
-              />
-            )}
+            <label className="mb-2 block text-xs text-white/50">Category</label>
+            <CategoryPicker value={pCategory} onChange={setPCategory} />
           </div>
           <div>
             <label className="mb-1 block text-xs text-white/50">Tags <span className="text-white/30">(comma separated)</span></label>
@@ -303,15 +367,49 @@ export function StorageDashboard() {
 
       {/* details modal */}
       <Modal open={!!details} onClose={() => setDetails(null)} title="File details">
-        {details && <FileDetails key={details.path} file={details} onClose={() => setDetails(null)} onSave={saveMeta} onDelete={(p) => { del(p); setDetails(null); }} onPreview={() => { const f = details; setDetails(null); openPreview(f); }} />}
+        {details && (
+          <FileDetails
+            key={details.path}
+            file={details}
+            onClose={() => setDetails(null)}
+            onSave={saveMeta}
+            onDelete={(f) => { setDetails(null); setDeleteTarget(f); }}
+            onPreview={() => { const f = details; setDetails(null); openPreview(f); }}
+          />
+        )}
+      </Modal>
+
+      {/* delete confirmation modal */}
+      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete file?">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm leading-relaxed text-white/70">
+            Are you sure you want to delete{" "}
+            <span className="font-semibold text-white">{deleteTarget?.name}</span>?
+            {" "}This cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setDeleteTarget(null)}
+              className="rounded-[12px] border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/[0.08]"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDelete}
+              className="rounded-[12px] border border-file-pdf/30 bg-file-pdf/[0.08] px-4 py-2.5 text-sm font-semibold text-file-pdf hover:bg-file-pdf/15"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* preview modal */}
       <Modal open={!!preview} onClose={() => setPreview(null)} title={preview?.file.name} size="lg">
-        <div className="grid max-h-[calc(100dvh-150px)] min-h-[300px] place-items-center overflow-auto bg-black/30 p-3">
+        <div className="grid max-h-[calc(100dvh-180px)] min-h-[300px] place-items-center overflow-auto bg-black/30 p-3">
           {previewLoading || !preview?.url ? <HippoLoader size={52} label="Opening preview…" />
             : previewKind === "image" ? (/* eslint-disable-next-line @next/next/no-img-element */ <img src={preview.url} alt={preview.file.name} className="max-w-full rounded-[10px]" />)
-            : previewKind === "pdf" ? <iframe src={preview.url} title={preview.file.name} className="h-[calc(100dvh-180px)] w-full rounded-[10px] bg-white" />
+            : previewKind === "pdf" ? <iframe src={preview.url} title={preview.file.name} className="h-[calc(100dvh-220px)] w-full rounded-[10px] bg-white" />
             : <div className="p-10 text-center"><FileGlyph format={glyphFor(preview.file.name)} size={56} showLabel={false} className="mx-auto" /><p className="mt-4 text-sm text-white/55">No inline preview for this type.</p><a href={preview.url} download={preview.file.name} className="btn-primary mt-4 inline-flex rounded-[12px] px-5 py-2.5 text-sm">Download</a></div>}
         </div>
       </Modal>
@@ -322,21 +420,18 @@ export function StorageDashboard() {
 function FileDetails({ file, onSave, onDelete, onPreview, onClose }: {
   file: StoredFile;
   onSave: (path: string, meta: { name?: string; category?: string; tags?: string[] }) => Promise<void>;
-  onDelete: (path: string) => void;
+  onDelete: (f: StoredFile) => void;
   onPreview: () => void;
   onClose: () => void;
 }) {
-  const isKnown = !!file.category && CATEGORIES.includes(file.category);
   const [name, setName] = useState(file.name);
-  const [category, setCategory] = useState(isKnown ? file.category : file.category ? "Other" : "Papers");
-  const [categoryCustom, setCategoryCustom] = useState(isKnown ? "" : file.category || "");
+  const [category, setCategory] = useState(file.category || BASE_CATS[0]!);
   const [tags, setTags] = useState(file.tags.join(", "));
   const [saving, setSaving] = useState(false);
 
   async function save() {
     setSaving(true);
-    const cat = category === "Other" ? (categoryCustom.trim() || "Other") : category;
-    await onSave(file.path, { name, category: cat, tags: tags.split(",").map((t) => t.trim()).filter(Boolean) });
+    await onSave(file.path, { name, category, tags: tags.split(",").map((t) => t.trim()).filter(Boolean) });
     setSaving(false);
     onClose();
   }
@@ -355,19 +450,8 @@ function FileDetails({ file, onSave, onDelete, onPreview, onClose }: {
         <input value={name} onChange={(e) => setName(e.target.value)} className="h-11 w-full rounded-[12px] border border-white/10 bg-black/30 px-3.5 text-sm text-white focus:border-accent-cyan/60 focus:outline-none" />
       </div>
       <div>
-        <label className="mb-1 block text-xs text-white/50">Category</label>
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className="h-11 w-full rounded-[12px] border border-white/10 bg-[#0d0d16] px-3 text-sm text-white focus:outline-none">
-          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
-        {category === "Other" && (
-          <input
-            autoFocus
-            value={categoryCustom}
-            onChange={(e) => setCategoryCustom(e.target.value)}
-            placeholder="Enter a custom category…"
-            className="mt-2 h-11 w-full rounded-[12px] border border-accent-cyan/40 bg-black/30 px-3.5 text-sm text-white placeholder:text-white/25 focus:border-accent-cyan/60 focus:outline-none"
-          />
-        )}
+        <label className="mb-2 block text-xs text-white/50">Category</label>
+        <CategoryPicker value={category} onChange={setCategory} />
       </div>
       <div>
         <label className="mb-1 block text-xs text-white/50">Tags</label>
@@ -375,7 +459,7 @@ function FileDetails({ file, onSave, onDelete, onPreview, onClose }: {
       </div>
       <div className="flex flex-wrap gap-2 pt-1">
         <button onClick={onPreview} className="rounded-[12px] border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/[0.08]">Preview</button>
-        <button onClick={() => onDelete(file.path)} className="rounded-[12px] border border-file-pdf/30 bg-file-pdf/[0.08] px-4 py-2.5 text-sm font-semibold text-file-pdf hover:bg-file-pdf/15">Delete</button>
+        <button onClick={() => onDelete(file)} className="rounded-[12px] border border-file-pdf/30 bg-file-pdf/[0.08] px-4 py-2.5 text-sm font-semibold text-file-pdf hover:bg-file-pdf/15">Delete</button>
         <button onClick={save} disabled={saving} className="btn-primary ml-auto rounded-[12px] px-5 py-2.5 text-sm disabled:opacity-60">{saving ? "Saving…" : "Save"}</button>
       </div>
     </div>

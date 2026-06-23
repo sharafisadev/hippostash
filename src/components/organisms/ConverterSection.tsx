@@ -98,6 +98,13 @@ export function ConverterSection() {
           result = await convertViaServer(item.file, format);
         }
         setItems((prev) => prev.map((p) => (p.id === item.id ? { ...p, status: "done", result } : p)));
+        // Auto-download as soon as the file is ready
+        const a = document.createElement("a");
+        a.href = result.url;
+        a.download = result.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
         ok++;
       } catch (e) {
         fail++;
@@ -322,6 +329,11 @@ async function convertViaServer(file: File, format: string): Promise<{ url: stri
   fd.append("file", file);
   fd.append("format", format);
   const res = await fetch("/api/convert", { method: "POST", body: fd });
+  // Guard against HTML error pages (Next.js 500/404) being parsed as JSON
+  const ct = res.headers.get("content-type") ?? "";
+  if (!ct.includes("application/json")) {
+    throw new Error(`Server error (${res.status}) — please try again.`);
+  }
   const data = (await res.json()) as { url?: string; name?: string; size?: number; error?: string };
   if (!res.ok || !data.url) throw new Error(data.error ?? "Conversion failed.");
   return { url: data.url, name: data.name ?? `converted.${EXT[format] ?? "bin"}`, size: data.size ?? 0 };
