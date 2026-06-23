@@ -132,7 +132,7 @@ export function StorageDashboard() {
   };
 
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [tab, setTab] = useState<"all" | FileKind>("all");
+  const [tab, setTab] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<"date" | "name" | "size">("date");
   const [page, setPage] = useState(0);
@@ -149,14 +149,27 @@ export function StorageDashboard() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const counts = useMemo(() => {
-    const c: Record<string, number> = { all: files.length, pdf: 0, image: 0, doc: 0, other: 0 };
-    files.forEach((f) => (c[fileKindFromName(f.name)] = (c[fileKindFromName(f.name)] ?? 0) + 1));
-    return c;
+  // Unique non-empty categories across all files, for dynamic tabs
+  const customCategoryTabs = useMemo(() => {
+    const seen = new Set<string>();
+    files.forEach((f) => { if (f.category) seen.add(f.category); });
+    return [...seen].sort();
   }, [files]);
 
+  const counts = useMemo(() => {
+    const c: Record<string, number> = { all: files.length, pdf: 0, image: 0, doc: 0 };
+    files.forEach((f) => { c[fileKindFromName(f.name)] = (c[fileKindFromName(f.name)] ?? 0) + 1; });
+    customCategoryTabs.forEach((cat) => { c[cat] = files.filter((f) => f.category === cat).length; });
+    return c;
+  }, [files, customCategoryTabs]);
+
+  const FILE_KIND_TABS = new Set(["pdf", "image", "doc", "other"]);
+
   const visible = useMemo(() => {
-    let list = tab === "all" ? files : files.filter((f) => fileKindFromName(f.name) === tab);
+    let list =
+      tab === "all" ? files
+      : FILE_KIND_TABS.has(tab) ? files.filter((f) => fileKindFromName(f.name) === tab)
+      : files.filter((f) => f.category === tab);
     const q = query.toLowerCase().trim();
     if (q) list = list.filter((f) => f.name.toLowerCase().includes(q) || f.category.toLowerCase().includes(q) || f.tags.some((t) => t.toLowerCase().includes(q)));
     list = [...list].sort((a, b) => {
@@ -253,6 +266,14 @@ export function StorageDashboard() {
               </button>
             );
           })}
+          {customCategoryTabs.map((cat) => {
+            const on = tab === cat;
+            return (
+              <button key={cat} onClick={() => setTab(cat)} className={cn("rounded-full border px-3 py-1.5 text-xs font-medium transition-colors", on ? "border-accent-cyan/50 bg-accent-cyan/10 text-white" : "border-white/10 text-white/55 hover:text-white")}>
+                {cat} <span className={on ? "text-accent-cyan" : "text-white/35"}>{counts[cat] ?? 0}</span>
+              </button>
+            );
+          })}
         </div>
 
         {msg && <p className="mb-3 rounded-[10px] bg-white/[0.05] px-3 py-2 text-xs text-white/70">{msg}</p>}
@@ -283,7 +304,7 @@ export function StorageDashboard() {
                     onClick={() => setDetails(f)}
                     className="group h-[150px] cursor-pointer overflow-hidden rounded-[14px] border border-white/[0.06] bg-white/[0.03] p-3.5 transition-colors hover:border-white/20">
                     <div className="mb-3 flex items-start justify-between">
-                      <FileGlyph format={glyphFor(f.name)} size={36} showLabel={false} />
+                      <FileGlyph format={glyphFor(f.name)} size={38} showLabel={false} />
                       <div className="opacity-0 transition-opacity group-hover:opacity-100"><FileActions f={f} onPreview={openPreview} onDetails={setDetails} onDelete={setDeleteTarget} /></div>
                     </div>
                     <div className="truncate text-sm font-medium text-white">{f.name}</div>
@@ -303,7 +324,7 @@ export function StorageDashboard() {
                   <motion.div key={f.path} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.2 }}
                     onClick={() => setDetails(f)}
                     className="flex h-[58px] cursor-pointer items-center gap-3 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 hover:border-white/20">
-                    <FileGlyph format={glyphFor(f.name)} size={30} showLabel={false} />
+                    <FileGlyph format={glyphFor(f.name)} size={32} showLabel={false} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-white">{f.name}</div>
                       <div className="text-xs text-white/40">{formatBytes(f.size)} · {fmtDate(f.createdAt)}{f.category && ` · ${f.category}`}</div>
