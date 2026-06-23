@@ -1,13 +1,8 @@
 import { cn } from "@/lib/utils";
 
-/**
- * The signature Hippo Stash file icon: a folded-corner card with a gradient
- * fill and a soft colored glow, optionally labeled with the format.
- */
-
 export type GlyphFormat =
   | "PDF" | "DOCX" | "XLSX" | "PPTX" | "JPG" | "PNG"
-  | "SVG" | "HEIC" | "ZIP" | "DOC" | "TXT" | "WEBP";
+  | "SVG" | "HEIC" | "ZIP" | "DOC" | "TXT" | "WEBP" | "CSV" | "MP4" | "GIF";
 
 interface GlyphStyle {
   from: string;
@@ -15,7 +10,6 @@ interface GlyphStyle {
   glow: string;
 }
 
-// Each format gets its own gradient + glow color (matches the design concept).
 const STYLES: Record<string, GlyphStyle> = {
   PDF:  { from: "#ff7d72", to: "#E74C3C", glow: "231,76,60" },
   DOCX: { from: "#5fa8e8", to: "#3B82F6", glow: "59,130,246" },
@@ -36,11 +30,10 @@ const STYLES: Record<string, GlyphStyle> = {
 
 interface FileGlyphProps {
   format: string;
-  /** Card width in px (height scales to ~1.2x). */
+  /** Card width in px — the dark container is square at this size. */
   size?: number;
   showLabel?: boolean;
   className?: string;
-  /** Soft floating bob animation. */
   bob?: boolean;
 }
 
@@ -53,22 +46,42 @@ export function FileGlyph({
 }: FileGlyphProps) {
   const key = format.toUpperCase();
   const s = STYLES[key] ?? STYLES.ZIP!;
-  const h = Math.round(size * 1.21);
+
+  // File shape is 62% of the container, with a 1.21 height ratio
+  const shapeW = Math.round(size * 0.62);
+  const shapeH = Math.round(shapeW * 1.21);
+  const cardR = Math.round(size * 0.22);
 
   return (
-    <div className={cn("flex flex-col items-center gap-2.5", className)}>
+    <div className={cn("flex flex-col items-center gap-3", className)}>
+      {/* dark card container */}
       <div
         className={cn(bob && "animate-bob")}
         style={{
           width: size,
-          height: h,
-          borderRadius: Math.round(size * 0.2),
-          background: `linear-gradient(160deg, ${s.from}, ${s.to})`,
-          clipPath: "polygon(0 0, 68% 0, 100% 26%, 100% 100%, 0 100%)",
-          boxShadow: `0 18px 36px rgba(${s.glow},0.4), inset 0 1px 0 rgba(255,255,255,0.5)`,
+          height: size,
+          borderRadius: cardR,
+          background: "linear-gradient(160deg, rgba(255,255,255,0.055), rgba(255,255,255,0.015))",
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 24px rgba(0,0,0,0.35)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
         aria-hidden="true"
-      />
+      >
+        {/* gradient file shape */}
+        <div
+          style={{
+            width: shapeW,
+            height: shapeH,
+            borderRadius: Math.round(shapeW * 0.14),
+            background: `linear-gradient(160deg, ${s.from}, ${s.to})`,
+            clipPath: "polygon(0 0, 68% 0, 100% 26%, 100% 100%, 0 100%)",
+            boxShadow: `0 8px 22px rgba(${s.glow},0.5), inset 0 1px 0 rgba(255,255,255,0.45)`,
+          }}
+        />
+      </div>
       {showLabel && (
         <span className="text-sm font-semibold text-white/60">{key}</span>
       )}
