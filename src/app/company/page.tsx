@@ -38,7 +38,7 @@ export default function InfoPage() {
     <InfoHub
       eyebrow="Hippo Stash"
       title="Everything about Hippo Stash, in one place."
-      intro="Who we are, how to get the most out of the app, and the legal details — all on a single page. Jump to any section from the index."
+      intro="Who we are, how to get the most out of the app, and the legal details. Pick a topic — Company, Resources or Legal — to explore it."
       sections={[
         {
           id: "about",
