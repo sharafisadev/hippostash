@@ -82,7 +82,7 @@ export function StorageDashboard() {
     return list;
   }, [files, tab, query, sort]);
 
-  const pageSize = view === "grid" ? 9 : 8;
+  const pageSize = view === "grid" ? 6 : 6; // 2 rows
   const pageCount = Math.max(1, Math.ceil(visible.length / pageSize));
   useEffect(() => { setPage(0); }, [tab, query, sort, view]);
   const pageItems = visible.slice(page * pageSize, page * pageSize + pageSize);

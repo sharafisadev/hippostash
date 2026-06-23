@@ -37,6 +37,7 @@ function glyphFor(name: string): string {
   return (name.split(".").pop() || "ZIP").toUpperCase();
 }
 const isImageFile = (f: File) => f.type.startsWith("image/");
+const Q_SIZE = 4; // queue page size — ~2 rows, then paginate
 
 export function ConverterSection() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -44,19 +45,24 @@ export function ConverterSection() {
   const [format, setFormat] = useState("PNG");
   const [converting, setConverting] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [qPage, setQPage] = useState(0);
   const { toast } = useToast();
 
   const addFiles = useCallback((list: FileList | null) => {
     const arr = Array.from(list ?? []);
     if (!arr.length) return;
-    setItems((prev) => [
-      ...prev,
-      ...arr.map((file) => ({
-        id: `${file.name}-${file.size}-${Math.random().toString(36).slice(2, 7)}`,
-        file,
-        status: "queued" as ItemStatus,
-      })),
-    ]);
+    setItems((prev) => {
+      const next = [
+        ...prev,
+        ...arr.map((file) => ({
+          id: `${file.name}-${file.size}-${Math.random().toString(36).slice(2, 7)}`,
+          file,
+          status: "queued" as ItemStatus,
+        })),
+      ];
+      setQPage(Math.ceil(next.length / Q_SIZE) - 1); // reveal newly added files
+      return next;
+    });
   }, []);
 
   function removeItem(id: string) {
@@ -122,6 +128,10 @@ export function ConverterSection() {
   const pendingCount = items.filter((i) => i.status === "queued" || i.status === "error").length;
   const convertingCount = items.filter((i) => i.status === "converting").length;
 
+  const qPageCount = Math.max(1, Math.ceil(items.length / Q_SIZE));
+  const qPageSafe = Math.min(qPage, qPageCount - 1);
+  const pageItems = items.slice(qPageSafe * Q_SIZE, qPageSafe * Q_SIZE + Q_SIZE);
+
   return (
     <section id="convert" className="relative z-[2] mx-auto max-w-[1180px] px-4 py-16 sm:px-6">
       <div className="pointer-events-none absolute inset-x-0 top-1/2 -z-10 mx-auto h-[420px] max-w-[820px] -translate-y-1/2 rounded-[40px] bg-[radial-gradient(60%_60%_at_30%_50%,rgba(78,205,196,0.10),transparent_70%),radial-gradient(60%_60%_at_80%_50%,rgba(155,89,182,0.12),transparent_70%)]" />
@@ -174,9 +184,9 @@ export function ConverterSection() {
               </div>
 
               {/* queue */}
-              <div className="mt-4 flex max-h-[280px] flex-col gap-2 overflow-y-auto">
+              <div className="mt-4 flex flex-col gap-2">
                 <AnimatePresence mode="popLayout">
-                  {items.map((it) => (
+                  {pageItems.map((it) => (
                     <motion.div
                       key={it.id}
                       layout
@@ -217,6 +227,25 @@ export function ConverterSection() {
                 </AnimatePresence>
                 {items.length === 0 && (
                   <p className="py-6 text-center font-mono text-xs text-white/30">no files queued yet</p>
+                )}
+                {qPageCount > 1 && (
+                  <div className="mt-1 flex items-center justify-between font-mono text-[11px] text-white/45">
+                    <button
+                      onClick={() => setQPage((p) => Math.max(0, p - 1))}
+                      disabled={qPageSafe === 0}
+                      className="rounded-[8px] border border-white/10 px-2.5 py-1 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      ← prev
+                    </button>
+                    <span>{qPageSafe + 1} / {qPageCount} · {items.length} files</span>
+                    <button
+                      onClick={() => setQPage((p) => Math.min(qPageCount - 1, p + 1))}
+                      disabled={qPageSafe >= qPageCount - 1}
+                      className="rounded-[8px] border border-white/10 px-2.5 py-1 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      next →
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
