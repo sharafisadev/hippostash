@@ -14,18 +14,23 @@ const columns = [
   {
     title: "Company",
     links: [
-      { href: "/about", label: "About" },
-      { href: "/company", label: "Company" },
-      { href: "/help", label: "Help Center" },
-      { href: "/faq", label: "FAQ" },
+      { href: "/company#about", label: "About" },
+      { href: "/company#story", label: "Our story" },
+      { href: "/company#security", label: "Security" },
+    ],
+  },
+  {
+    title: "Resources",
+    links: [
+      { href: "/help#help", label: "Help Center" },
+      { href: "/help#faq", label: "FAQ" },
     ],
   },
   {
     title: "Legal",
     links: [
-      { href: "/privacy", label: "Privacy Policy" },
-      { href: "/terms", label: "Terms of Service" },
-      { href: "/security", label: "Security" },
+      { href: "/legal#privacy", label: "Privacy Policy" },
+      { href: "/legal#terms", label: "Terms of Service" },
     ],
   },
 ];
@@ -34,7 +39,7 @@ export function Footer() {
   return (
     <footer className="relative z-[2] overflow-hidden border-t border-white/[0.07]">
       <div className="relative mx-auto max-w-[1180px] px-4 sm:px-6 pb-[30px] pt-[56px]">
-        <div className="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-3 lg:grid-cols-[1.6fr_repeat(4,1fr)]">
           <div>
             <div className="mb-4 flex items-center gap-2.5">
               <Image src="/hippo-icon.png" alt="" width={30} height={30} className="rounded-[8px]" />
