@@ -262,7 +262,7 @@ export function ConverterSection() {
           <input ref={inputRef} type="file" accept={ACCEPT} multiple className="sr-only" aria-label="Select files to convert" onChange={(e) => addFiles(e.target.files)} />
 
           {/* Fixed-height inner grid — height never changes as files are added/removed */}
-          <div className="grid md:grid-cols-[1.45fr_1fr] md:h-[456px]">
+          <div className="grid md:grid-cols-[1.45fr_1fr] md:h-[520px]">
 
             {/* ── Left: dropzone + queue (or preview) ── */}
             <div className="flex flex-col overflow-hidden border-b border-white/[0.06] p-5 md:border-b-0 md:border-r">
@@ -282,7 +282,7 @@ export function ConverterSection() {
                       onDragLeave={() => setDragging(false)}
                       onDrop={(e) => { e.preventDefault(); setDragging(false); addFiles(e.dataTransfer.files); }}
                       className={cn(
-                        "flex flex-none cursor-pointer flex-col items-center justify-center gap-3 rounded-[14px] border border-dashed px-6 py-8 text-center transition-colors",
+                        "flex flex-none cursor-pointer flex-col items-center justify-center gap-2.5 rounded-[14px] border border-dashed px-6 py-6 text-center transition-colors",
                         dragging ? "border-accent-cyan/70 bg-accent-cyan/[0.06]" : "border-white/15 bg-white/[0.02] hover:border-white/25"
                       )}
                     >
@@ -329,7 +329,7 @@ export function ConverterSection() {
                     </div>
 
                     {/* Active list — fixed slots, paginated (no scroll) */}
-                    <div className="relative mt-2 flex flex-1 flex-col gap-2 min-h-0">
+                    <div className="relative mt-2 flex flex-1 flex-col gap-2 overflow-hidden min-h-0">
                       <AnimatePresence initial={false} mode="popLayout">
                         {pageItems.map((it) => listTab === "converted" ? (
                           <motion.div
@@ -406,17 +406,17 @@ export function ConverterSection() {
                     </div>
 
                     {/* Pagination row — always occupies space */}
-                    <div className="mt-2 flex h-[32px] flex-none items-center">
+                    <div className="mt-3 flex h-[38px] flex-none items-center">
                       {qPageCount > 1 ? (
-                        <div className="flex w-full items-center justify-between font-mono text-[11px] text-white/45">
+                        <div className="flex w-full items-center justify-between font-mono text-[12px] text-white/55">
                           <button onClick={() => setQPage((p) => Math.max(0, p - 1))} disabled={qPageSafe === 0}
-                            className="rounded-[7px] border border-white/10 px-2.5 py-1 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                            &larr; prev
+                            className="rounded-[9px] border border-white/15 bg-white/[0.03] px-4 py-2 transition-colors hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30">
+                            &larr; Prev
                           </button>
-                          <span>{qPageSafe + 1} / {qPageCount} &middot; {activeList.length} {listTab === "converted" ? "done" : "queued"}</span>
+                          <span className="text-white/40">{qPageSafe + 1} / {qPageCount} &middot; {activeList.length} {listTab === "converted" ? "done" : "queued"}</span>
                           <button onClick={() => setQPage((p) => Math.min(qPageCount - 1, p + 1))} disabled={qPageSafe >= qPageCount - 1}
-                            className="rounded-[7px] border border-white/10 px-2.5 py-1 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                            next &rarr;
+                            className="rounded-[9px] border border-white/15 bg-white/[0.03] px-4 py-2 transition-colors hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30">
+                            Next &rarr;
                           </button>
                         </div>
                       ) : activeList.length > 0 ? (
