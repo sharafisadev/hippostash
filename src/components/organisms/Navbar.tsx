@@ -18,7 +18,17 @@ const links = [
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<string>("");
+  const [scrolled, setScrolled] = useState(false);
   const { user, open: openAuth, signOut } = useAuth();
+
+  // Scroll-reactive chrome: transparent at the very top, frosted-glass pill once
+  // the user scrolls past the hero fold.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   // While a click-initiated smooth scroll is in flight, ignore scroll-spy so
   // the indicator jumps straight to the target instead of chasing every
   // section it passes (which reads as shaking).
@@ -52,7 +62,12 @@ export function Navbar() {
 
   return (
     <header className="fixed inset-x-0 top-[14px] z-[60] mx-auto w-[calc(100%-32px)] max-w-[1180px] sm:top-[18px] sm:w-[calc(100%-48px)]">
-      <nav className="lq flex items-center justify-between rounded-[18px] py-2.5 pl-4 pr-2.5 sm:rounded-[20px] sm:py-[11px] sm:pl-[22px] sm:pr-[14px]">
+      <nav
+        className={cn(
+          "flex items-center justify-between rounded-[18px] py-2.5 pl-4 pr-2.5 transition-all duration-300 ease-out sm:rounded-[20px] sm:py-[11px] sm:pl-[22px] sm:pr-[14px]",
+          scrolled || open ? "lq" : "border border-transparent bg-transparent shadow-none"
+        )}
+      >
         <Logo href="#top" />
 
         <div className="hidden items-center gap-1 md:flex">
