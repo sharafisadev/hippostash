@@ -53,7 +53,7 @@ export function Navbar() {
 
   return (
     <header className="fixed inset-x-0 top-[14px] z-[60] mx-auto w-[calc(100%-32px)] max-w-[1180px] sm:top-[18px] sm:w-[calc(100%-48px)]">
-      <nav className="lq flex items-center justify-between rounded-[18px] py-2.5 pl-4 pr-2.5 sm:rounded-[20px] sm:py-[11px] sm:pl-[22px] sm:pr-[14px]">
+      <nav className="lq flex items-center justify-between rounded-[18px] py-2.5 pl-4 pr-2.5 !bg-[#0c0c16] sm:rounded-[20px] sm:py-[11px] sm:pl-[22px] sm:pr-[14px]">
         <Logo href="#top" />
 
         <div className="hidden items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.04] px-1.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:flex">
