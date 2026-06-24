@@ -181,7 +181,7 @@ export function StorageDashboard() {
     return list;
   }, [files, tab, query, sort]);
 
-  const pageSize = 6; // 2 rows
+  const pageSize = 3;
   const pageCount = Math.max(1, Math.ceil(visible.length / pageSize));
   useEffect(() => { setPage(0); }, [tab, query, sort, view]);
   const pageItems = visible.slice(page * pageSize, page * pageSize + pageSize);

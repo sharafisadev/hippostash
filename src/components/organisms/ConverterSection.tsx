@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Reveal } from "@/components/molecules/Reveal";
 import { FileGlyph } from "@/components/atoms/FileGlyph";
-import { HippoLoader } from "@/components/atoms/HippoLoader";
 import { useToast } from "@/components/providers/ToastProvider";
 import { formatBytes, cn } from "@/lib/utils";
 
@@ -44,9 +43,18 @@ export function ConverterSection() {
   const [items, setItems] = useState<QueueItem[]>([]);
   const [format, setFormat] = useState("PNG");
   const [converting, setConverting] = useState(false);
+  const [convPct, setConvPct] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [qPage, setQPage] = useState(0);
   const { toast } = useToast();
+
+  // When all queued files are images, restrict to image-compatible output formats only
+  const allImages = items.length > 0 && items.every((i) => isImageFile(i.file));
+  const isFormatEnabled = (f: string) => !allImages || CLIENT_FORMATS.includes(f);
+  // If the selected format becomes disabled, fall back to PNG
+  useEffect(() => {
+    if (allImages && !CLIENT_FORMATS.includes(format)) setFormat("PNG");
+  }, [allImages, format]);
 
   const addFiles = useCallback((list: FileList | null) => {
     const arr = Array.from(list ?? []);
@@ -82,10 +90,12 @@ export function ConverterSection() {
     const pending = items.filter((i) => i.status === "queued" || i.status === "error");
     if (!pending.length) return;
     setConverting(true);
+    setConvPct(5);
     let ok = 0;
     let fail = 0;
 
-    for (const item of pending) {
+    for (let idx = 0; idx < pending.length; idx++) {
+      const item = pending[idx]!;
       setItems((prev) => prev.map((p) => (p.id === item.id ? { ...p, status: "converting", error: undefined } : p)));
       try {
         const baseName = item.file.name.replace(/\.[^.]+$/, "") || "converted";
@@ -98,7 +108,6 @@ export function ConverterSection() {
           result = await convertViaServer(item.file, format);
         }
         setItems((prev) => prev.map((p) => (p.id === item.id ? { ...p, status: "done", result } : p)));
-        // Auto-download as soon as the file is ready
         const a = document.createElement("a");
         a.href = result.url;
         a.download = result.name;
@@ -108,12 +117,15 @@ export function ConverterSection() {
         ok++;
       } catch (e) {
         fail++;
-        setItems((prev) =>
-          prev.map((p) => (p.id === item.id ? { ...p, status: "error", error: e instanceof Error ? e.message : "Failed" } : p))
-        );
+        const msg = e instanceof Error ? e.message : "Failed";
+        setItems((prev) => prev.map((p) => (p.id === item.id ? { ...p, status: "error", error: msg } : p)));
       }
+      setConvPct(Math.round(5 + ((idx + 1) / pending.length) * 95));
     }
+    setConvPct(100);
+    await new Promise((r) => setTimeout(r, 500));
     setConverting(false);
+    setConvPct(0);
     if (ok) toast(`Converted ${ok} file${ok === 1 ? "" : "s"} ✓`, "success");
     if (fail) toast(`${fail} file${fail === 1 ? "" : "s"} couldn't be converted.`, "error");
   }
@@ -268,29 +280,47 @@ export function ConverterSection() {
                   <div key={g.label}>
                     <div className="mb-1.5 text-[11px] text-white/35">{g.label}</div>
                     <div className="flex flex-wrap gap-1.5">
-                      {g.formats.map((f) => (
-                        <button
-                          key={f}
-                          onClick={() => setFormat(f)}
-                          className={cn(
-                            "rounded-[8px] border px-3 py-1.5 font-mono text-[12px] transition-colors",
-                            format === f ? "border-accent-cyan/60 bg-accent-cyan/10 text-accent-cyan" : "border-white/10 text-white/55 hover:text-white"
-                          )}
-                        >
-                          .{EXT[f] ?? f.toLowerCase()}
-                        </button>
-                      ))}
+                      {g.formats.map((f) => {
+                        const enabled = isFormatEnabled(f);
+                        return (
+                          <button
+                            key={f}
+                            onClick={() => enabled && setFormat(f)}
+                            disabled={!enabled}
+                            title={enabled ? undefined : "Not supported for image files"}
+                            className={cn(
+                              "rounded-[8px] border px-3 py-1.5 font-mono text-[12px] transition-colors",
+                              !enabled ? "cursor-not-allowed border-white/[0.05] text-white/20" :
+                              format === f ? "border-accent-cyan/60 bg-accent-cyan/10 text-accent-cyan" : "border-white/10 text-white/55 hover:text-white"
+                            )}
+                          >
+                            .{EXT[f] ?? f.toLowerCase()}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
               </div>
 
               <div className="mt-auto pt-5">
-                {converting ? (
-                  <div className="grid place-items-center rounded-[12px] bg-white/[0.03] py-4">
-                    <HippoLoader size={44} label={`Converting ${doneCount + convertingCount}/${items.length}…`} />
+                {converting && (
+                  <div className="mb-3 overflow-hidden rounded-[12px] border border-accent-cyan/20 bg-accent-cyan/[0.04] px-4 py-3">
+                    <div className="mb-2 flex items-center justify-between text-xs">
+                      <span className="font-medium text-white/70">
+                        Converting {doneCount + convertingCount}/{doneCount + convertingCount + pendingCount}…
+                      </span>
+                      <span className="font-semibold tabular-nums text-accent-cyan">{convPct}%</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
+                      <div
+                        className="h-full rounded-full bg-accent-cyan transition-all duration-300 ease-out"
+                        style={{ width: `${convPct}%` }}
+                      />
+                    </div>
                   </div>
-                ) : (
+                )}
+                {!converting ? (
                   <button
                     onClick={convertAll}
                     disabled={pendingCount === 0}
@@ -300,7 +330,7 @@ export function ConverterSection() {
                       ? doneCount > 0 ? "All converted ✓" : "Add files to convert"
                       : `Convert ${pendingCount} → .${EXT[format] ?? format.toLowerCase()}`}
                   </button>
-                )}
+                ) : null}
 
                 {doneCount > 0 && !converting && (
                   <div className="mt-2 flex gap-2">
