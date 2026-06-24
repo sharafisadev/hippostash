@@ -54,17 +54,16 @@
 @layer components {
   /* Liquid-glass surface — the core material of the design. */
   .lq {
-    background: linear-gradient(
-      150deg,
-      rgba(var(--ink-rgb), 0.09),
-      rgba(var(--ink-rgb), 0.03)
-    );
-    backdrop-filter: blur(28px) saturate(160%);
-    -webkit-backdrop-filter: blur(28px) saturate(160%);
-    border: 1px solid rgba(var(--ink-rgb), 0.12);
+    background: rgba(14, 14, 24, 0.45);
+    backdrop-filter: blur(32px) saturate(180%) brightness(1.05);
+    -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(1.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow:
-      inset 0 1px 0 rgba(var(--ink-rgb), 0.2),
-      0 18px 48px rgba(0, 0, 0, 0.45);
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      0 20px 50px rgba(0, 0, 0, 0.5);
+    will-change: backdrop-filter;
+    isolation: isolate;
+    transform: translateZ(0);
   }
 
   /* Skip painting off-screen sections — big paint/scroll win on long pages. */
