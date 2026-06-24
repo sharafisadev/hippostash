@@ -56,15 +56,15 @@
   .lq {
     background: linear-gradient(
       150deg,
-      rgba(var(--ink-rgb), 0.075),
-      rgba(var(--ink-rgb), 0.02)
+      rgba(var(--ink-rgb), 0.09),
+      rgba(var(--ink-rgb), 0.03)
     );
-    backdrop-filter: blur(9px) saturate(130%);
-    -webkit-backdrop-filter: blur(9px) saturate(130%);
-    border: 1px solid rgba(var(--ink-rgb), 0.1);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid rgba(var(--ink-rgb), 0.12);
     box-shadow:
-      inset 0 1px 0 rgba(var(--ink-rgb), 0.18),
-      0 18px 48px rgba(0, 0, 0, 0.4);
+      inset 0 1px 0 rgba(var(--ink-rgb), 0.2),
+      0 18px 48px rgba(0, 0, 0, 0.45);
   }
 
   /* Skip painting off-screen sections — big paint/scroll win on long pages. */
@@ -129,13 +129,13 @@
    * Without this, Safari ignores all backdrop-blur-* classes.
    */
   .backdrop-blur-none    { -webkit-backdrop-filter: blur(0); }
-  .backdrop-blur-sm      { -webkit-backdrop-filter: blur(4px); }
-  .backdrop-blur         { -webkit-backdrop-filter: blur(8px); }
-  .backdrop-blur-md      { -webkit-backdrop-filter: blur(12px); }
-  .backdrop-blur-lg      { -webkit-backdrop-filter: blur(16px); }
-  .backdrop-blur-xl      { -webkit-backdrop-filter: blur(24px); }
-  .backdrop-blur-2xl     { -webkit-backdrop-filter: blur(40px); }
-  .backdrop-blur-3xl     { -webkit-backdrop-filter: blur(64px); }
+  .backdrop-blur-sm      { -webkit-backdrop-filter: blur(10px); }
+  .backdrop-blur         { -webkit-backdrop-filter: blur(16px); }
+  .backdrop-blur-md      { -webkit-backdrop-filter: blur(22px); }
+  .backdrop-blur-lg      { -webkit-backdrop-filter: blur(28px); }
+  .backdrop-blur-xl      { -webkit-backdrop-filter: blur(36px); }
+  .backdrop-blur-2xl     { -webkit-backdrop-filter: blur(52px); }
+  .backdrop-blur-3xl     { -webkit-backdrop-filter: blur(80px); }
 }
 
 /*

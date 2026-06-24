@@ -44,6 +44,15 @@ const config: Config = {
         "accent-gradient": "linear-gradient(135deg, #4ECDC4 0%, #9B59B6 100%)",
         "tri-gradient": "linear-gradient(110deg, #4ECDC4, #9B59B6, #3B82F6, #4ECDC4)",
       },
+      backdropBlur: {
+        sm: "10px",
+        DEFAULT: "16px",
+        md: "22px",
+        lg: "28px",
+        xl: "36px",
+        "2xl": "52px",
+        "3xl": "80px",
+      },
       boxShadow: {
         lq: "inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 2px rgba(0,0,0,0.4), 0 24px 60px rgba(0,0,0,0.45)",
         glow: "0 12px 38px rgba(120,120,200,0.45), inset 0 1px 0 rgba(255,255,255,0.45)",
