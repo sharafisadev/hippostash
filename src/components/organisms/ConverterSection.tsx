@@ -282,16 +282,16 @@ export function ConverterSection() {
                       onDragLeave={() => setDragging(false)}
                       onDrop={(e) => { e.preventDefault(); setDragging(false); addFiles(e.dataTransfer.files); }}
                       className={cn(
-                        "flex flex-none cursor-pointer items-center gap-3 rounded-[12px] border border-dashed px-4 py-2.5 transition-colors",
+                        "flex flex-none cursor-pointer flex-col items-center justify-center gap-3 rounded-[14px] border border-dashed px-6 py-8 text-center transition-colors",
                         dragging ? "border-accent-cyan/70 bg-accent-cyan/[0.06]" : "border-white/15 bg-white/[0.02] hover:border-white/25"
                       )}
                     >
-                      <div className="grid h-8 w-8 flex-none place-items-center rounded-[9px] bg-[linear-gradient(135deg,var(--a1),var(--a2))]">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B0B14" strokeWidth="2.4"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg>
+                      <div className="grid h-12 w-12 flex-none place-items-center rounded-[12px] bg-[linear-gradient(135deg,var(--a1),var(--a2))]">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B0B14" strokeWidth="2.4"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg>
                       </div>
                       <div>
-                        <div className="font-mono text-[12px] text-white/70">Drop files to convert</div>
-                        <div className="font-mono text-[11px] text-white/35">images &middot; pdf &middot; docx &middot; xlsx &middot; &hellip;</div>
+                        <div className="font-mono text-[15px] text-white/80">Drop files to convert</div>
+                        <div className="mt-1 font-mono text-[12px] text-white/40">images &middot; pdf &middot; docx &middot; xlsx &middot; &hellip;</div>
                       </div>
                     </div>
 

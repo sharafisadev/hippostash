@@ -1,8 +1,0 @@
-[build]
-  command = "npm run build"
-  publish = ".next"
-
-# Official Next.js runtime — serves SSR pages and the /api/* route handlers
-# (/api/files, /api/convert) as Netlify Functions.
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
