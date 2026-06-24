@@ -68,7 +68,7 @@ export function Hero() {
             variants={item}
             className="m-0 mb-5 font-display text-[clamp(40px,5vw,66px)] font-bold leading-[1.02] tracking-[-0.035em]"
           >
-            All your <RotatingWord />
+            <span className="whitespace-nowrap">All your <RotatingWord /></span>
             <br />
             <span className="gradient-text animate-grad-move">one secure stash.</span>
           </motion.h1>
