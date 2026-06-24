@@ -546,7 +546,7 @@ async function combineImagesToPDF(files: File[]): Promise<Blob> {
     const img = await loadImage(file);
     const w = img.naturalWidth || img.width;
     const h = img.naturalHeight || img.height;
-    const jpeg = await canvasToBlob(drawCanvas(img, w, h, "#ffffff"), "image/jpeg", 0.88);
+    const jpeg = await canvasToBlob(drawCanvas(img, w, h, "#ffffff"), "image/jpeg", 0.96);
     pages.push({ jpeg: new Uint8Array(await jpeg.arrayBuffer()), w, h });
   }
   return encodePDFPages(pages);
@@ -561,11 +561,11 @@ async function convertImage(file: File, format: string): Promise<Blob> {
     case "WEBP":
       return canvasToBlob(drawCanvas(img, w, h), format === "PNG" ? "image/png" : "image/webp");
     case "JPEG":
-      return canvasToBlob(drawCanvas(img, w, h, "#ffffff"), "image/jpeg", 0.92);
+      return canvasToBlob(drawCanvas(img, w, h, "#ffffff"), "image/jpeg", 0.96);
     case "BMP":
       return encodeBMP(drawCanvas(img, w, h).getContext("2d")!.getImageData(0, 0, w, h));
     case "PDF": {
-      const jpeg = await canvasToBlob(drawCanvas(img, w, h, "#ffffff"), "image/jpeg", 0.92);
+      const jpeg = await canvasToBlob(drawCanvas(img, w, h, "#ffffff"), "image/jpeg", 0.96);
       const bytes = new Uint8Array(await jpeg.arrayBuffer());
       return encodePDFPages([{ jpeg: bytes, w, h }]);
     }
@@ -596,6 +596,9 @@ function drawCanvas(img: HTMLImageElement, w: number, h: number, background?: st
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas unavailable");
+  // High-quality resampling so scaled images stay crisp instead of pixelated.
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   if (background) { ctx.fillStyle = background; ctx.fillRect(0, 0, w, h); }
   ctx.drawImage(img, 0, 0, w, h);
   return canvas;
