@@ -72,7 +72,7 @@ export function HeroApp() {
         <div className="absolute left-1/2 top-1/2 h-[220%] w-[220%] -translate-x-1/2 -translate-y-1/2 animate-spin blur-[3px] [animation-duration:10s] [background:conic-gradient(from_0deg,transparent_0deg,var(--a1)_40deg,transparent_120deg,var(--a2)_200deg,transparent_280deg,var(--a3)_330deg,transparent_360deg)]" />
       </div>
 
-      <div className="lq relative overflow-hidden rounded-[26px] p-4 sm:p-5">
+      <div className="lq relative overflow-hidden rounded-[26px] p-4 [background:linear-gradient(160deg,rgba(17,17,28,0.94),rgba(10,10,18,0.96))] sm:p-5">
         {/* header */}
         <div className="mb-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
