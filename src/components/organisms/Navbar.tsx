@@ -51,7 +51,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="fixed left-1/2 top-[14px] z-[60] w-[calc(100%-32px)] max-w-[1180px] -translate-x-1/2 sm:top-[18px] sm:w-[calc(100%-48px)]">
+    <header className="fixed inset-x-0 top-[14px] z-[60] mx-auto w-[calc(100%-32px)] max-w-[1180px] sm:top-[18px] sm:w-[calc(100%-48px)]">
       <nav className="lq flex items-center justify-between rounded-[18px] py-2.5 pl-4 pr-2.5 sm:rounded-[20px] sm:py-[11px] sm:pl-[22px] sm:pr-[14px]">
         <Logo href="#top" />
 
