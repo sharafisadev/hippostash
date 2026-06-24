@@ -121,6 +121,30 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  /*
+   * Autoprefixer skips -webkit-backdrop-filter when the value contains CSS
+   * custom properties (Tailwind's --tw-backdrop-blur etc.), so we force the
+   * vendor-prefixed form here for every Tailwind backdrop-blur utility.
+   * Without this, Safari ignores all backdrop-blur-* classes.
+   */
+  .backdrop-blur-none    { -webkit-backdrop-filter: blur(0); }
+  .backdrop-blur-sm      { -webkit-backdrop-filter: blur(4px); }
+  .backdrop-blur         { -webkit-backdrop-filter: blur(8px); }
+  .backdrop-blur-md      { -webkit-backdrop-filter: blur(12px); }
+  .backdrop-blur-lg      { -webkit-backdrop-filter: blur(16px); }
+  .backdrop-blur-xl      { -webkit-backdrop-filter: blur(24px); }
+  .backdrop-blur-2xl     { -webkit-backdrop-filter: blur(40px); }
+  .backdrop-blur-3xl     { -webkit-backdrop-filter: blur(64px); }
+}
+
+/*
+ * Arbitrary backdrop-blur values (e.g. backdrop-blur-[10px]) aren't
+ * caught by the layer above, so use an attribute selector as a catch-all.
+ * The CSS variable is set by Tailwind; we mirror it to -webkit-.
+ */
+[class*="backdrop-blur-"] {
+  -webkit-backdrop-filter: var(--tw-backdrop-blur, blur(0));
 }
 
 /* ── Micro-interactions ── */

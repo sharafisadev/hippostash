@@ -2,6 +2,14 @@
   "name": "hippo-stash",
   "version": "1.0.0",
   "private": true,
+  "browserslist": [
+    "> 0.5%",
+    "last 2 versions",
+    "Firefox ESR",
+    "not dead",
+    "Safari >= 14",
+    "iOS >= 14"
+  ],
   "description": "Hippo Stash — premium document storage, organization, and conversion platform.",
   "scripts": {
     "build": "next build",
