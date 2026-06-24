@@ -52,11 +52,11 @@ export function Navbar() {
   };
 
   return (
-    <header className="fixed inset-x-0 top-[14px] z-[60] mx-auto w-[calc(100%-32px)] max-w-[1180px] sm:top-[18px] sm:w-[calc(100%-48px)]">
-      <nav className="lq flex items-center justify-between rounded-[18px] py-2.5 pl-4 pr-2.5 !bg-[#0c0c16] sm:rounded-[20px] sm:py-[11px] sm:pl-[22px] sm:pr-[14px]">
+    <header className="fixed left-1/2 top-[14px] z-[60] w-[calc(100%-32px)] max-w-[1180px] -translate-x-1/2 sm:top-[18px] sm:w-[calc(100%-48px)]">
+      <nav className="lq flex items-center justify-between rounded-[18px] py-2.5 pl-4 pr-2.5 sm:rounded-[20px] sm:py-[11px] sm:pl-[22px] sm:pr-[14px]">
         <Logo href="#top" />
 
-        <div className="hidden items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.04] px-1.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:flex">
+        <div className="hidden items-center gap-1 md:flex">
           {links.map((l) => {
             const on = active === l.id;
             return (
@@ -65,14 +65,14 @@ export function Navbar() {
                 href={`#${l.id}`}
                 onClick={() => selectLink(l.id)}
                 className={cn(
-                  "relative rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
+                  "relative rounded-[10px] px-3.5 py-2 text-sm font-medium transition-colors",
                   on ? "text-white" : "text-white/55 hover:text-white"
                 )}
               >
                 {on && (
                   <motion.span
                     layoutId="nav-active"
-                    className="absolute inset-0 -z-10 rounded-full bg-white/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                    className="absolute inset-0 -z-10 rounded-[10px] bg-white/[0.08]"
                     transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                   />
                 )}
