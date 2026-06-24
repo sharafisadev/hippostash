@@ -80,7 +80,11 @@ export function FilePreviewModal({ open, onClose, url, name, kind, loading }: Pr
           className="fixed inset-0 z-[120] flex flex-col"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}
         >
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
+          <div
+            className="absolute inset-0 backdrop-blur-xl [background:radial-gradient(120%_120%_at_50%_0%,rgba(28,26,46,0.86),rgba(10,10,18,0.92))]"
+            onClick={onClose}
+            aria-hidden="true"
+          />
 
           {/* Toolbar */}
           <div className="relative z-10 flex flex-none items-center gap-3 px-4 py-3 sm:px-6">
