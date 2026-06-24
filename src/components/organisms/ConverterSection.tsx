@@ -301,99 +301,51 @@ export function ConverterSection() {
                       )}
                     </AnimatePresence>
 
-                    {/* File list — always exactly Q_SIZE slots */}
-                    <div className="relative mt-3 flex flex-1 flex-col min-h-0">
-                      <div className="flex flex-col gap-2">
-                        <AnimatePresence>
-                          {pageItems.map((it) => (
-                            <motion.div
-                              key={it.id}
-                              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                              transition={{ duration: 0.15 }}
-                              className="flex h-[58px] items-center gap-2.5 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3"
-                            >
-                              <FileGlyph format={glyphFor(it.file.name)} size={30} showLabel={false} />
-                              <div className="min-w-0 flex-1">
-                                <div className="truncate text-sm font-medium">{it.file.name}</div>
-                                <div className="text-xs text-white/45">
-                                  {it.status === "converting" ? <span className="text-accent-cyan">Converting&hellip;</span>
-                                   : it.status === "done"      ? <span className="text-file-image">Done &middot; {formatBytes(it.result!.size)}</span>
-                                   : it.status === "error"     ? <span className="text-file-pdf truncate">{it.error}</span>
-                                   : formatBytes(it.file.size)}
-                                </div>
+                    {/* Scrollable region: queue + converted results (no overlap) */}
+                    <div className="relative mt-3 flex flex-1 flex-col gap-2 overflow-y-auto min-h-0 pr-1">
+                      <AnimatePresence initial={false}>
+                        {pageItems.map((it) => (
+                          <motion.div
+                            key={it.id}
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            className="flex h-[58px] flex-none items-center gap-2.5 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3"
+                          >
+                            <FileGlyph format={glyphFor(it.file.name)} size={30} showLabel={false} />
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-sm font-medium">{it.file.name}</div>
+                              <div className="text-xs text-white/45">
+                                {it.status === "converting" ? <span className="text-accent-cyan">Converting&hellip;</span>
+                                 : it.status === "error"     ? <span className="text-file-pdf truncate">{it.error}</span>
+                                 : formatBytes(it.file.size)}
                               </div>
-                              <div className="flex items-center gap-0.5">
-                                {/* Preview */}
-                                <button onClick={() => openPreview(it)} title="Preview" aria-label="Preview"
-                                  className="grid h-7 w-7 place-items-center rounded-[8px] text-white/35 transition-colors hover:bg-white/10 hover:text-white">
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
+                            </div>
+                            <div className="flex items-center gap-0.5">
+                              <button onClick={() => openPreview(it)} title="Preview" aria-label="Preview"
+                                className="grid h-7 w-7 place-items-center rounded-[8px] text-white/35 transition-colors hover:bg-white/10 hover:text-white">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
+                              </button>
+                              {it.status === "converting" ? (
+                                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-accent-cyan" />
+                              ) : (
+                                <button onClick={() => removeItem(it.id)} aria-label="Remove"
+                                  className="grid h-7 w-7 place-items-center rounded-[8px] text-white/35 transition-colors hover:bg-white/10 hover:text-file-pdf">
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M6 18L18 6" strokeLinecap="round" /></svg>
                                 </button>
-                                {/* Converting spinner / download / remove */}
-                                {it.status === "converting" ? (
-                                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-accent-cyan" />
-                                ) : it.status === "done" ? (
-                                  <a href={it.result!.url} download={it.result!.name} title="Download"
-                                    className="grid h-7 w-7 place-items-center rounded-[8px] text-accent-cyan transition-colors hover:bg-white/10">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                  </a>
-                                ) : (
-                                  <button onClick={() => removeItem(it.id)} aria-label="Remove"
-                                    className="grid h-7 w-7 place-items-center rounded-[8px] text-white/35 transition-colors hover:bg-white/10 hover:text-file-pdf">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M6 18L18 6" strokeLinecap="round" /></svg>
-                                  </button>
-                                )}
-                              </div>
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-                        {/* Ghost slots — keep height stable */}
-                        {Array.from({ length: Math.max(0, Q_SIZE - pageItems.length) }).map((_, i) => (
-                          <div key={`g-${i}`} aria-hidden className="h-[58px] rounded-[12px] border border-white/[0.03]" />
+                              )}
+                            </div>
+                          </motion.div>
                         ))}
-                      </div>
+                      </AnimatePresence>
 
-                      {/* Empty state overlay */}
-                      {queueItems.length === 0 && (
-                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                          <p className="font-mono text-xs text-white/25">
-                            {doneItems.length > 0 ? "queue empty — results below" : "no files queued yet"}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Pagination row — always occupies space */}
-                    <div className="mt-2 flex h-[32px] flex-none items-center">
-                      {qPageCount > 1 ? (
-                        <div className="flex w-full items-center justify-between font-mono text-[11px] text-white/45">
-                          <button onClick={() => setQPage((p) => Math.max(0, p - 1))} disabled={qPageSafe === 0}
-                            className="rounded-[7px] border border-white/10 px-2.5 py-1 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                            &larr; prev
-                          </button>
-                          <span>{qPageSafe + 1} / {qPageCount} &middot; {items.length} files</span>
-                          <button onClick={() => setQPage((p) => Math.min(qPageCount - 1, p + 1))} disabled={qPageSafe >= qPageCount - 1}
-                            className="rounded-[7px] border border-white/10 px-2.5 py-1 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                            next &rarr;
-                          </button>
-                        </div>
-                      ) : queueItems.length > 0 ? (
-                        <span className="font-mono text-[11px] text-white/30">{queueItems.length} file{queueItems.length === 1 ? "" : "s"} &mdash; add more or convert</span>
-                      ) : null}
-                    </div>
-
-                    {/* ── Converted results — separate area ── */}
-                    <AnimatePresence>
+                      {/* ── Converted results — separate area ── */}
                       {doneItems.length > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.25 }}
-                          className="mt-1 flex-none overflow-hidden"
-                        >
-                          <div className="mb-2 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-accent-cyan">
+                        <div className="flex-none">
+                          <div className="mb-2 mt-1 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-accent-cyan">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                             Converted &middot; ready to download
                           </div>
-                          <div className="flex max-h-[140px] flex-col gap-2 overflow-y-auto pr-1">
+                          <div className="flex flex-col gap-2">
                             {doneItems.map((it) => (
                               <div key={it.id} className="flex h-[50px] flex-none items-center gap-2.5 rounded-[12px] border border-accent-cyan/20 bg-accent-cyan/[0.05] px-3">
                                 <FileGlyph format={glyphFor(it.result!.name)} size={26} showLabel={false} />
@@ -412,9 +364,37 @@ export function ConverterSection() {
                               </div>
                             ))}
                           </div>
-                        </motion.div>
+                        </div>
                       )}
-                    </AnimatePresence>
+
+                      {/* Empty state */}
+                      {queueItems.length === 0 && doneItems.length === 0 && (
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                          <p className="font-mono text-xs text-white/25">no files queued yet</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Pagination row — always occupies space */}
+                    <div className="mt-2 flex h-[32px] flex-none items-center">
+                      {qPageCount > 1 ? (
+                        <div className="flex w-full items-center justify-between font-mono text-[11px] text-white/45">
+                          <button onClick={() => setQPage((p) => Math.max(0, p - 1))} disabled={qPageSafe === 0}
+                            className="rounded-[7px] border border-white/10 px-2.5 py-1 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                            &larr; prev
+                          </button>
+                          <span>{qPageSafe + 1} / {qPageCount} &middot; {queueItems.length} queued</span>
+                          <button onClick={() => setQPage((p) => Math.min(qPageCount - 1, p + 1))} disabled={qPageSafe >= qPageCount - 1}
+                            className="rounded-[7px] border border-white/10 px-2.5 py-1 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                            next &rarr;
+                          </button>
+                        </div>
+                      ) : queueItems.length > 0 ? (
+                        <span className="font-mono text-[11px] text-white/30">{queueItems.length} file{queueItems.length === 1 ? "" : "s"} queued &mdash; add more or convert</span>
+                      ) : doneItems.length > 0 ? (
+                        <span className="font-mono text-[11px] text-accent-cyan/60">{doneItems.length} file{doneItems.length === 1 ? "" : "s"} converted ✓</span>
+                      ) : null}
+                    </div>
 
                   </motion.div>
                 )}
