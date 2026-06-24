@@ -143,6 +143,7 @@ export function StorageDashboard() {
   const [pTags, setPTags] = useState("");
   const [pName, setPName] = useState("");
   const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
+  const [uploadPct, setUploadPct] = useState(0);
 
   const [details, setDetails] = useState<StoredFile | null>(null);
   const [preview, setPreview] = useState<{ file: StoredFile; url: string } | null>(null);
@@ -202,6 +203,7 @@ export function StorageDashboard() {
     const meta = { category: pCategory, tags: pTags.split(",").map((t) => t.trim()).filter(Boolean) };
     setPending(null);
     setUploading({ done: 0, total: arr.length });
+    setUploadPct(10);
     let ok = 0;
     for (let i = 0; i < arr.length; i++) {
       try {
@@ -209,8 +211,12 @@ export function StorageDashboard() {
         ok++;
       } catch (e) { setMsg(e instanceof Error ? e.message : "Upload failed."); }
       setUploading({ done: i + 1, total: arr.length });
+      setUploadPct(Math.round(10 + ((i + 1) / arr.length) * 90));
     }
+    setUploadPct(100);
+    await new Promise((r) => setTimeout(r, 500));
     setUploading(null);
+    setUploadPct(0);
     if (ok) toast(`${ok} file${ok === 1 ? "" : "s"} added to your stash.`, "success");
   }
 
@@ -279,6 +285,24 @@ export function StorageDashboard() {
         {msg && <p className="mb-3 rounded-[10px] bg-white/[0.05] px-3 py-2 text-xs text-white/70">{msg}</p>}
         {notReady && <p className="mb-3 rounded-[10px] bg-amber-400/10 px-3 py-2 text-xs text-amber-300">Storage isn&apos;t enabled — the <code>user-files</code> bucket is missing.</p>}
 
+        {/* upload progress bar */}
+        {uploading && (
+          <div className="mb-4 overflow-hidden rounded-[12px] border border-accent-cyan/20 bg-accent-cyan/[0.04] px-4 py-3">
+            <div className="mb-2 flex items-center justify-between text-xs">
+              <span className="font-medium text-white/70">
+                Uploading {uploading.done}/{uploading.total} file{uploading.total !== 1 ? "s" : ""}…
+              </span>
+              <span className="font-semibold tabular-nums text-accent-cyan">{uploadPct}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
+              <div
+                className="h-full rounded-full bg-accent-cyan transition-all duration-300 ease-out"
+                style={{ width: `${uploadPct}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* dropzone (compact) */}
         <div
           onClick={() => inputRef.current?.click()}
@@ -287,7 +311,7 @@ export function StorageDashboard() {
           onDrop={(e) => { e.preventDefault(); setDragging(false); onPicked(e.dataTransfer.files); }}
           className={cn("mb-4 cursor-pointer rounded-[12px] border border-dashed py-3 text-center text-xs transition-colors", dragging ? "border-accent-cyan/70 bg-accent-cyan/[0.06] text-white" : "border-white/12 text-white/40 hover:border-white/25")}
         >
-          {uploading ? <HippoLoader size={40} label={`Uploading ${uploading.done}/${uploading.total}…`} /> : 'Drag & drop files here, or use “Add files”'}
+          {'Drag & drop files here, or use "Add files"'}
         </div>
 
         {/* files */}
@@ -300,7 +324,7 @@ export function StorageDashboard() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <AnimatePresence mode="popLayout">
                 {pageItems.map((f) => (
-                  <motion.div key={f.path} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2 }}
+                  <motion.div key={f.path} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
                     onClick={() => setDetails(f)}
                     className="group h-[150px] cursor-pointer overflow-hidden rounded-[14px] border border-white/[0.06] bg-white/[0.03] p-3.5 transition-colors hover:border-white/20">
                     <div className="mb-3 flex items-start justify-between">
@@ -321,7 +345,7 @@ export function StorageDashboard() {
             <div className="flex flex-col gap-2">
               <AnimatePresence mode="popLayout">
                 {pageItems.map((f) => (
-                  <motion.div key={f.path} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.2 }}
+                  <motion.div key={f.path} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
                     onClick={() => setDetails(f)}
                     className="flex h-[58px] cursor-pointer items-center gap-3 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 hover:border-white/20">
                     <FileGlyph format={glyphFor(f.name)} size={32} showLabel={false} />

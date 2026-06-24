@@ -53,8 +53,8 @@ export function FileGlyph({
   const shapeR = Math.round(shapeW * 0.14);
   const cardR = Math.round(size * 0.22);
 
-  // Hippo icon sits centered inside the file shape, ~52% of shape width
-  const hippoSize = Math.round(shapeW * 0.52);
+  // Hippo icon sits centered inside the file shape, ~52% of shape width + 2px boost
+  const hippoSize = Math.round(shapeW * 0.52) + 2;
 
   return (
     <div className={cn("flex flex-col items-center gap-3", className)}>
