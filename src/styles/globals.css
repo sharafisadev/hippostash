@@ -62,8 +62,6 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.12),
       0 20px 50px rgba(0, 0, 0, 0.55);
     will-change: backdrop-filter;
-    isolation: isolate;
-    transform: translateZ(0);
   }
 
   /* Skip painting off-screen sections — big paint/scroll win on long pages. */
