@@ -1,7 +1,13 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { FileGlyph } from "@/components/atoms/FileGlyph";
 import { useAuth } from "@/components/providers/AuthProvider";
+
+const rowVariants = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } },
+};
 
 const files = [
   { name: "passport-scan.jpg", fmt: "JPG", meta: "1.1 MB" },
@@ -61,9 +67,20 @@ export function HeroApp() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <motion.div
+        className="flex flex-col gap-2"
+        initial="hidden"
+        animate="show"
+        variants={{ show: { transition: { staggerChildren: 0.12, delayChildren: 0.45 } } }}
+      >
         {files.map((f) => (
-          <div key={f.name} className="flex items-center gap-3 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+          <motion.div
+            key={f.name}
+            variants={rowVariants}
+            whileHover={{ scale: 1.018, backgroundColor: "rgba(255,255,255,0.05)" }}
+            transition={{ type: "spring", stiffness: 400, damping: 28 }}
+            className="flex items-center gap-3 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2.5"
+          >
             <FileGlyph format={f.fmt} size={28} showLabel={false} />
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium">{f.name}</div>
@@ -80,9 +97,9 @@ export function HeroApp() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
               </button>
             </div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       <div className="mt-3.5">
         <div className="mb-1.5 flex items-center justify-between text-xs">
@@ -90,7 +107,12 @@ export function HeroApp() {
           <span className="text-white/50">6.2 GB <span className="text-white/30">of 25 GB</span></span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-white/[0.08]">
-          <div className="h-full w-1/4 rounded-full bg-gradient-to-r from-accent-cyan via-accent-violet to-accent-blue" />
+          <motion.div
+            className="h-full rounded-full bg-[linear-gradient(90deg,var(--a1),var(--a2),var(--a3),var(--a1))] bg-[length:200%_100%] animate-grad-move"
+            initial={{ width: 0 }}
+            animate={{ width: "25%" }}
+            transition={{ delay: 0.9, duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+          />
         </div>
       </div>
 
@@ -99,10 +121,19 @@ export function HeroApp() {
 
       {/* ── CONVERT ── */}
       <Label icon={ConvertIc}>Convert</Label>
-      <div className="flex items-center gap-3 rounded-[12px] border border-white/[0.06] bg-white/[0.03] p-3">
+      <motion.div
+        whileHover={{ scale: 1.012 }}
+        transition={{ type: "spring", stiffness: 400, damping: 28 }}
+        className="flex items-center gap-3 rounded-[12px] border border-white/[0.06] bg-white/[0.03] p-3"
+      >
         <div className="flex items-center gap-2">
           <FileGlyph format="DOCX" size={30} showLabel={false} />
-          <svg width="22" height="14" viewBox="0 0 24 14" fill="none"><path d="M2 7h14" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="3 3" /><path d="M16 2l5 5-5 5" stroke="var(--a1)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <svg width="22" height="14" viewBox="0 0 24 14" fill="none">
+            <path d="M2 7h14" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="3 3" />
+            <motion.path d="M16 2l5 5-5 5" stroke="var(--a1)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+              animate={{ x: [0, 3, 0], opacity: [0.6, 1, 0.6] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }} />
+          </svg>
           <FileGlyph format="PDF" size={30} showLabel={false} />
         </div>
         <div className="hidden min-w-0 flex-1 truncate text-xs text-white/45 sm:block">
@@ -111,7 +142,7 @@ export function HeroApp() {
         <button onClick={() => go("convert")} className="ml-auto shrink-0 rounded-[10px] border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/[0.1] sm:ml-0">
           Convert a file
         </button>
-      </div>
+      </motion.div>
     </div>
   );
 }
