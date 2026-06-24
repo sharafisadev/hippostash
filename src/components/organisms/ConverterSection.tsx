@@ -47,14 +47,17 @@ export function ConverterSection() {
   const [dragging, setDragging] = useState(false);
   const [qPage, setQPage]       = useState(0);
   const [preview, setPreview]   = useState<{ url: string; type: "image" | "pdf" | "other"; name: string } | null>(null);
+  // How to handle multiple images: convert each one separately, or combine all into one PDF.
+  const [imgMode, setImgMode]   = useState<"separate" | "combined">("separate");
   const { toast } = useToast();
 
   const allImages = items.length > 0 && items.every((i) => isImageFile(i.file));
   const allPDFs   = items.length > 0 && items.every((i) => isPDFFile(i.file));
+  const multiImage = allImages && items.length > 1;
 
   type MergeMode = "images-to-pdf" | "pdfs-to-pdf" | null;
   const mergeMode: MergeMode =
-    allImages && format === "PDF" && items.length > 1 ? "images-to-pdf" :
+    multiImage && imgMode === "combined"            ? "images-to-pdf" :
     allPDFs   && format === "PDF" && items.length > 1 ? "pdfs-to-pdf"   : null;
 
   const isFormatEnabled = (f: string) => !allImages || CLIENT_FORMATS.includes(f);
@@ -62,6 +65,11 @@ export function ConverterSection() {
   useEffect(() => {
     if (allImages && !CLIENT_FORMATS.includes(format)) setFormat("PNG");
   }, [allImages, format]);
+
+  // Reset the multi-image choice whenever we're no longer dealing with multiple images.
+  useEffect(() => {
+    if (!multiImage) setImgMode("separate");
+  }, [multiImage]);
 
   // revoke preview URL when items list changes size (item removed/added)
   useEffect(() => {
@@ -397,8 +405,46 @@ export function ConverterSection() {
 
             {/* ── Right: format picker + actions ── */}
             <div className="flex flex-col overflow-hidden p-5">
-              <div className="mb-1 font-mono text-[11px] uppercase tracking-wider text-white/40">output format</div>
-              <div className="flex flex-col gap-3">
+
+              {/* Multiple images? Ask how to handle them. */}
+              <AnimatePresence>
+                {multiImage && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                    animate={{ opacity: 1, height: "auto", marginBottom: 16 }}
+                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex-none overflow-hidden"
+                  >
+                    <div className="mb-1.5 font-mono text-[11px] uppercase tracking-wider text-white/40">
+                      {items.length} images — how?
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button onClick={() => setImgMode("separate")}
+                        className={cn(
+                          "rounded-[9px] border px-3 py-2 text-left transition-colors",
+                          imgMode === "separate" ? "border-accent-cyan/60 bg-accent-cyan/10" : "border-white/10 hover:border-white/25"
+                        )}>
+                        <div className={cn("text-[12px] font-semibold", imgMode === "separate" ? "text-accent-cyan" : "text-white/80")}>Separate files</div>
+                        <div className="mt-0.5 text-[10px] leading-tight text-white/40">Convert each image on its own</div>
+                      </button>
+                      <button onClick={() => setImgMode("combined")}
+                        className={cn(
+                          "rounded-[9px] border px-3 py-2 text-left transition-colors",
+                          imgMode === "combined" ? "border-accent-cyan/60 bg-accent-cyan/10" : "border-white/10 hover:border-white/25"
+                        )}>
+                        <div className={cn("text-[12px] font-semibold", imgMode === "combined" ? "text-accent-cyan" : "text-white/80")}>One PDF</div>
+                        <div className="mt-0.5 text-[10px] leading-tight text-white/40">Combine all into a single PDF</div>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className={cn("mb-1 font-mono text-[11px] uppercase tracking-wider transition-opacity", imgMode === "combined" && multiImage ? "text-white/25" : "text-white/40")}>
+                output format {imgMode === "combined" && multiImage && <span className="normal-case tracking-normal text-white/30">— locked to PDF</span>}
+              </div>
+              <div className={cn("flex flex-col gap-3 transition-opacity", imgMode === "combined" && multiImage && "pointer-events-none opacity-40")}>
                 {FORMAT_GROUPS.map((g) => (
                   <div key={g.label}>
                     <div className="mb-1.5 text-[11px] text-white/35">{g.label}</div>
