@@ -6,6 +6,7 @@ import { useStorage, type StoredFile } from "@/lib/hooks/useStorage";
 import { FileGlyph } from "@/components/atoms/FileGlyph";
 import { HippoLoader } from "@/components/atoms/HippoLoader";
 import { Modal } from "@/components/molecules/Modal";
+import { FilePreviewModal } from "@/components/molecules/FilePreviewModal";
 import { useToast } from "@/components/providers/ToastProvider";
 import { fileKindFromName, formatBytes, cn } from "@/lib/utils";
 import type { FileKind } from "@/lib/types";
@@ -448,15 +449,15 @@ export function StorageDashboard() {
         </div>
       </Modal>
 
-      {/* preview modal */}
-      <Modal open={!!preview} onClose={() => setPreview(null)} title={preview?.file.name} size="lg">
-        <div className="grid max-h-[calc(100dvh-180px)] min-h-[300px] place-items-center overflow-auto bg-black/30 p-3">
-          {previewLoading || !preview?.url ? <HippoLoader size={52} label="Opening preview…" />
-            : previewKind === "image" ? (/* eslint-disable-next-line @next/next/no-img-element */ <img src={preview.url} alt={preview.file.name} className="max-w-full rounded-[10px]" />)
-            : previewKind === "pdf" ? <iframe src={preview.url} title={preview.file.name} className="h-[calc(100dvh-220px)] w-full rounded-[10px] bg-white" />
-            : <div className="p-10 text-center"><FileGlyph format={glyphFor(preview.file.name)} size={56} showLabel={false} className="mx-auto" /><p className="mt-4 text-sm text-white/55">No inline preview for this type.</p><a href={preview.url} download={preview.file.name} className="btn-primary mt-4 inline-flex rounded-[12px] px-5 py-2.5 text-sm">Download</a></div>}
-        </div>
-      </Modal>
+      {/* preview modal — full-screen, zoomable */}
+      <FilePreviewModal
+        open={!!preview}
+        onClose={() => setPreview(null)}
+        url={preview?.url ?? ""}
+        name={preview?.file.name ?? ""}
+        kind={previewKind === "image" ? "image" : previewKind === "pdf" ? "pdf" : "other"}
+        loading={previewLoading || !preview?.url}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Reveal } from "@/components/molecules/Reveal";
 import { FileGlyph } from "@/components/atoms/FileGlyph";
+import { FilePreviewModal } from "@/components/molecules/FilePreviewModal";
 import { useToast } from "@/components/providers/ToastProvider";
 import { formatBytes, cn } from "@/lib/utils";
 
@@ -253,30 +254,7 @@ export function ConverterSection() {
             <div className="flex flex-col overflow-hidden border-b border-white/[0.06] p-5 md:border-b-0 md:border-r">
 
               <AnimatePresence mode="wait" initial={false}>
-                {preview ? (
-                  /* ── Preview pane ── */
-                  <motion.div key="preview" className="flex flex-1 flex-col min-h-0"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-                    <div className="mb-3 flex flex-none items-center gap-2">
-                      <button onClick={closePreview} className="flex items-center gap-1 rounded-[8px] border border-white/10 px-2.5 py-1 font-mono text-[11px] text-white/50 transition-colors hover:text-white">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" strokeLinecap="round" /></svg>
-                        Back
-                      </button>
-                      <span className="flex-1 truncate text-right font-mono text-[11px] text-white/40">{preview.name}</span>
-                    </div>
-                    <div className="flex-1 min-h-0 overflow-hidden rounded-[12px] border border-white/[0.06] bg-white/[0.02]">
-                      {preview.type === "image" ? (
-                        <img src={preview.url} alt={preview.name} className="h-full w-full object-contain p-2" />
-                      ) : preview.type === "pdf" ? (
-                        <embed src={preview.url} type="application/pdf" className="h-full w-full" />
-                      ) : (
-                        <div className="flex h-full items-center justify-center">
-                          <FileGlyph format={glyphFor(preview.name)} size={80} showLabel />
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                ) : (
+                {(
                   /* ── Queue view ── */
                   <motion.div key="queue" className="flex flex-1 flex-col min-h-0"
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
@@ -509,6 +487,14 @@ export function ConverterSection() {
           </div>
         </div>
       </Reveal>
+
+      <FilePreviewModal
+        open={!!preview}
+        onClose={closePreview}
+        url={preview?.url ?? ""}
+        name={preview?.name ?? ""}
+        kind={preview?.type ?? "other"}
+      />
     </section>
   );
 }
