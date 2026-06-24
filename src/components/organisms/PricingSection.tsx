@@ -3,9 +3,17 @@
 import { useState } from "react";
 import { Reveal } from "@/components/molecules/Reveal";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useToast } from "@/components/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 
 type Interval = "monthly" | "yearly";
+
+// Stripe Payment Links per plan + billing interval. Paste the live URLs here.
+// Leave blank to show a "checkout coming soon" message instead of redirecting.
+const STRIPE_LINKS: Record<string, Record<Interval, string>> = {
+  Pro:      { monthly: "", yearly: "" },
+  Business: { monthly: "", yearly: "" },
+};
 
 interface Tier {
   name: string;
@@ -22,7 +30,7 @@ const tiers: Tier[] = [
     name: "Free",
     price: { monthly: "$0", yearly: "$0" },
     period: false,
-    blurb: "For getting your essential documents in order.",
+    blurb: "Get your essential documents organized — free forever, no card.",
     cta: "Get Started Free",
     features: [
       { label: "1GB secure storage", on: true },
@@ -35,7 +43,7 @@ const tiers: Tier[] = [
     name: "Pro",
     price: { monthly: "$9", yearly: "$79" },
     period: true,
-    blurb: "For power users who store and convert daily.",
+    blurb: "Everything you need to store, convert and find files fast — daily.",
     cta: "Start Pro",
     popular: true,
     features: [
@@ -50,7 +58,7 @@ const tiers: Tier[] = [
     name: "Business",
     price: { monthly: "$29", yearly: "$249" },
     period: true,
-    blurb: "For teams that share documents securely.",
+    blurb: "Secure sharing, API access and scale for your whole team.",
     cta: "Start Business",
     features: [
       { label: "100GB secure storage", on: true },
@@ -64,7 +72,30 @@ const tiers: Tier[] = [
 
 export function PricingSection() {
   const [interval, setInterval] = useState<Interval>("monthly");
-  const { open } = useAuth();
+  const { user, open } = useAuth();
+  const { toast } = useToast();
+
+  function selectPlan(t: Tier) {
+    // Free plan: just send them into the product (sign up if needed).
+    if (!t.period) {
+      if (user) document.getElementById("storage")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      else open("register", { plan: t.name });
+      return;
+    }
+
+    const link = STRIPE_LINKS[t.name]?.[interval];
+
+    if (user) {
+      // Already signed in → straight to payment, never the sign-in modal again.
+      if (link) window.location.href = link;
+      else toast("Secure checkout is being set up — we'll have it live shortly!", "info");
+      return;
+    }
+
+    // Not signed in → create the account first, then continue to checkout.
+    if (link) sessionStorage.setItem("pendingCheckout", link);
+    open("register", { plan: t.name });
+  }
 
   return (
     <section id="pricing" className="relative z-[2] mx-auto max-w-[1180px] px-4 sm:px-6 pb-[70px] pt-[50px]">
@@ -137,7 +168,7 @@ export function PricingSection() {
                 <p className="m-0 mb-6 text-sm text-white/[0.48]">{t.blurb}</p>
 
                 <button
-                  onClick={() => open("register", { plan: t.name })}
+                  onClick={() => selectPlan(t)}
                   className={cn(
                     "mb-[26px] block w-full rounded-[12px] py-[13px] text-center text-[15px] font-semibold text-white",
                     t.popular ? "btn-primary !text-[#0b0b14]" : "lq"

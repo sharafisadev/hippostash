@@ -82,6 +82,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         onSuccess={() => {
           setModalOpen(false);
           toast("You're signed in 🦛", "success");
+          // If they picked a paid plan before signing up, continue to checkout.
+          const pending = typeof window !== "undefined" ? sessionStorage.getItem("pendingCheckout") : null;
+          if (pending) {
+            sessionStorage.removeItem("pendingCheckout");
+            toast("Taking you to secure checkout…", "info");
+            setTimeout(() => { window.location.href = pending; }, 600);
+            return;
+          }
           // glide to the now-unlocked stash
           setTimeout(
             () =>
