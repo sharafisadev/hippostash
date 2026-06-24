@@ -205,13 +205,16 @@ export function ConverterSection() {
     if (ready.length) toast(`Downloading ${ready.length} file${ready.length === 1 ? "" : "s"}...`, "info");
   }
 
-  const doneCount      = items.filter((i) => i.status === "done").length;
+  // Split the queue (still to convert) from finished results so they don't mix.
+  const queueItems = items.filter((i) => i.status !== "done");
+  const doneItems  = items.filter((i) => i.status === "done");
+  const doneCount      = doneItems.length;
   const pendingCount   = items.filter((i) => i.status === "queued" || i.status === "error").length;
   const convertingItem = items.filter((i) => i.status === "converting").length;
 
-  const qPageCount = Math.max(1, Math.ceil(items.length / Q_SIZE));
+  const qPageCount = Math.max(1, Math.ceil(queueItems.length / Q_SIZE));
   const qPageSafe  = Math.min(qPage, qPageCount - 1);
-  const pageItems  = items.slice(qPageSafe * Q_SIZE, qPageSafe * Q_SIZE + Q_SIZE);
+  const pageItems  = queueItems.slice(qPageSafe * Q_SIZE, qPageSafe * Q_SIZE + Q_SIZE);
 
   const convertLabel =
     mergeMode === "images-to-pdf" ? `Combine ${pendingCount} images → PDF` :
@@ -350,9 +353,11 @@ export function ConverterSection() {
                       </div>
 
                       {/* Empty state overlay */}
-                      {items.length === 0 && (
+                      {queueItems.length === 0 && (
                         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                          <p className="font-mono text-xs text-white/25">no files queued yet</p>
+                          <p className="font-mono text-xs text-white/25">
+                            {doneItems.length > 0 ? "queue empty — results below" : "no files queued yet"}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -371,10 +376,45 @@ export function ConverterSection() {
                             next &rarr;
                           </button>
                         </div>
-                      ) : items.length > 0 ? (
-                        <span className="font-mono text-[11px] text-white/30">{items.length} file{items.length === 1 ? "" : "s"} &mdash; add more or convert</span>
+                      ) : queueItems.length > 0 ? (
+                        <span className="font-mono text-[11px] text-white/30">{queueItems.length} file{queueItems.length === 1 ? "" : "s"} &mdash; add more or convert</span>
                       ) : null}
                     </div>
+
+                    {/* ── Converted results — separate area ── */}
+                    <AnimatePresence>
+                      {doneItems.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.25 }}
+                          className="mt-1 flex-none overflow-hidden"
+                        >
+                          <div className="mb-2 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-accent-cyan">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                            Converted &middot; ready to download
+                          </div>
+                          <div className="flex max-h-[140px] flex-col gap-2 overflow-y-auto pr-1">
+                            {doneItems.map((it) => (
+                              <div key={it.id} className="flex h-[50px] flex-none items-center gap-2.5 rounded-[12px] border border-accent-cyan/20 bg-accent-cyan/[0.05] px-3">
+                                <FileGlyph format={glyphFor(it.result!.name)} size={26} showLabel={false} />
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate text-[13px] font-medium">{it.result!.name}</div>
+                                  <div className="text-[11px] text-accent-cyan/80">{formatBytes(it.result!.size)}</div>
+                                </div>
+                                <button onClick={() => openPreview(it)} title="Preview" aria-label="Preview"
+                                  className="grid h-7 w-7 place-items-center rounded-[8px] text-white/40 transition-colors hover:bg-white/10 hover:text-white">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
+                                </button>
+                                <a href={it.result!.url} download={it.result!.name} title="Download" aria-label="Download"
+                                  className="grid h-7 w-7 place-items-center rounded-[8px] text-accent-cyan transition-colors hover:bg-white/10">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                   </motion.div>
                 )}
