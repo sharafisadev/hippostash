@@ -47,6 +47,7 @@ export function ConverterSection() {
   const [convPct, setConvPct]   = useState(0);
   const [dragging, setDragging] = useState(false);
   const [qPage, setQPage]       = useState(0);
+  const [listTab, setListTab]   = useState<"queue" | "converted">("queue");
   const [preview, setPreview]   = useState<{ url: string; type: "image" | "pdf" | "other"; name: string } | null>(null);
   // How to handle multiple images: convert each one separately, or combine all into one PDF.
   const [imgMode, setImgMode]   = useState<"separate" | "combined">("separate");
@@ -212,9 +213,19 @@ export function ConverterSection() {
   const pendingCount   = items.filter((i) => i.status === "queued" || i.status === "error").length;
   const convertingItem = items.filter((i) => i.status === "converting").length;
 
-  const qPageCount = Math.max(1, Math.ceil(queueItems.length / Q_SIZE));
+  // Active tab's list (Queue or Converted) drives the visible rows + pagination.
+  const activeList = listTab === "converted" ? doneItems : queueItems;
+  const qPageCount = Math.max(1, Math.ceil(activeList.length / Q_SIZE));
   const qPageSafe  = Math.min(qPage, qPageCount - 1);
-  const pageItems  = queueItems.slice(qPageSafe * Q_SIZE, qPageSafe * Q_SIZE + Q_SIZE);
+  const pageItems  = activeList.slice(qPageSafe * Q_SIZE, qPageSafe * Q_SIZE + Q_SIZE);
+
+  // Reset to first page whenever the active tab changes.
+  useEffect(() => { setQPage(0); }, [listTab]);
+  // Jump to Converted when the queue empties out after a conversion; back to Queue if nothing converted.
+  useEffect(() => {
+    if (queueItems.length === 0 && doneItems.length > 0) setListTab("converted");
+    else if (doneItems.length === 0) setListTab("queue");
+  }, [queueItems.length, doneItems.length]);
 
   const convertLabel =
     mergeMode === "images-to-pdf" ? `Combine ${pendingCount} images → PDF` :
@@ -301,14 +312,55 @@ export function ConverterSection() {
                       )}
                     </AnimatePresence>
 
-                    {/* Scrollable region: queue + converted results (no overlap) */}
-                    <div className="relative mt-3 flex flex-1 flex-col gap-2 overflow-y-auto min-h-0 pr-1">
-                      <AnimatePresence initial={false}>
-                        {pageItems.map((it) => (
+                    {/* Tabs: Queue / Converted */}
+                    <div className="mt-3 flex flex-none items-center gap-1.5">
+                      <button onClick={() => setListTab("queue")}
+                        className={cn("rounded-[9px] px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors",
+                          listTab === "queue" ? "bg-white/[0.08] text-white" : "text-white/40 hover:text-white")}>
+                        Queue{queueItems.length > 0 && <span className="ml-1.5 text-white/50">{queueItems.length}</span>}
+                      </button>
+                      <button onClick={() => doneItems.length && setListTab("converted")} disabled={!doneItems.length}
+                        className={cn("flex items-center gap-1 rounded-[9px] px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors",
+                          listTab === "converted" ? "bg-accent-cyan/15 text-accent-cyan"
+                          : doneItems.length ? "text-white/40 hover:text-white" : "cursor-not-allowed text-white/20")}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        Converted{doneItems.length > 0 && <span className="ml-0.5">{doneItems.length}</span>}
+                      </button>
+                    </div>
+
+                    {/* Active list — fixed slots, paginated (no scroll) */}
+                    <div className="relative mt-2 flex flex-1 flex-col gap-2 min-h-0">
+                      <AnimatePresence initial={false} mode="popLayout">
+                        {pageItems.map((it) => listTab === "converted" ? (
                           <motion.div
                             key={it.id}
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            transition={{ duration: 0.15 }}
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
+                            className="flex h-[58px] flex-none items-center gap-2.5 rounded-[12px] border border-accent-cyan/20 bg-accent-cyan/[0.05] px-3"
+                          >
+                            <FileGlyph format={glyphFor(it.result!.name)} size={28} showLabel={false} />
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-sm font-medium">{it.result!.name}</div>
+                              <div className="text-[11px] text-accent-cyan/80">{formatBytes(it.result!.size)}</div>
+                            </div>
+                            <div className="flex items-center gap-0.5">
+                              <button onClick={() => openPreview(it)} title="Preview" aria-label="Preview"
+                                className="grid h-7 w-7 place-items-center rounded-[8px] text-white/40 transition-colors hover:bg-white/10 hover:text-white">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
+                              </button>
+                              <a href={it.result!.url} download={it.result!.name} title="Download" aria-label="Download"
+                                className="grid h-7 w-7 place-items-center rounded-[8px] text-accent-cyan transition-colors hover:bg-white/10">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                              </a>
+                              <button onClick={() => removeItem(it.id)} title="Remove" aria-label="Remove"
+                                className="grid h-7 w-7 place-items-center rounded-[8px] text-white/35 transition-colors hover:bg-white/10 hover:text-file-pdf">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M6 18L18 6" strokeLinecap="round" /></svg>
+                              </button>
+                            </div>
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key={it.id}
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
                             className="flex h-[58px] flex-none items-center gap-2.5 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3"
                           >
                             <FileGlyph format={glyphFor(it.file.name)} size={30} showLabel={false} />
@@ -328,7 +380,7 @@ export function ConverterSection() {
                               {it.status === "converting" ? (
                                 <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-accent-cyan" />
                               ) : (
-                                <button onClick={() => removeItem(it.id)} aria-label="Remove"
+                                <button onClick={() => removeItem(it.id)} title="Remove" aria-label="Remove"
                                   className="grid h-7 w-7 place-items-center rounded-[8px] text-white/35 transition-colors hover:bg-white/10 hover:text-file-pdf">
                                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M6 18L18 6" strokeLinecap="round" /></svg>
                                 </button>
@@ -338,39 +390,17 @@ export function ConverterSection() {
                         ))}
                       </AnimatePresence>
 
-                      {/* ── Converted results — separate area ── */}
-                      {doneItems.length > 0 && (
-                        <div className="flex-none">
-                          <div className="mb-2 mt-1 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-accent-cyan">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                            Converted &middot; ready to download
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            {doneItems.map((it) => (
-                              <div key={it.id} className="flex h-[50px] flex-none items-center gap-2.5 rounded-[12px] border border-accent-cyan/20 bg-accent-cyan/[0.05] px-3">
-                                <FileGlyph format={glyphFor(it.result!.name)} size={26} showLabel={false} />
-                                <div className="min-w-0 flex-1">
-                                  <div className="truncate text-[13px] font-medium">{it.result!.name}</div>
-                                  <div className="text-[11px] text-accent-cyan/80">{formatBytes(it.result!.size)}</div>
-                                </div>
-                                <button onClick={() => openPreview(it)} title="Preview" aria-label="Preview"
-                                  className="grid h-7 w-7 place-items-center rounded-[8px] text-white/40 transition-colors hover:bg-white/10 hover:text-white">
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
-                                </button>
-                                <a href={it.result!.url} download={it.result!.name} title="Download" aria-label="Download"
-                                  className="grid h-7 w-7 place-items-center rounded-[8px] text-accent-cyan transition-colors hover:bg-white/10">
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                </a>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      {/* Ghost slots — keep height stable */}
+                      {Array.from({ length: Math.max(0, Q_SIZE - pageItems.length) }).map((_, i) => (
+                        <div key={`g-${i}`} aria-hidden className="h-[58px] flex-none rounded-[12px] border border-white/[0.03]" />
+                      ))}
 
                       {/* Empty state */}
-                      {queueItems.length === 0 && doneItems.length === 0 && (
+                      {activeList.length === 0 && (
                         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                          <p className="font-mono text-xs text-white/25">no files queued yet</p>
+                          <p className="font-mono text-xs text-white/25">
+                            {listTab === "converted" ? "nothing converted yet" : "no files queued yet"}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -383,16 +413,16 @@ export function ConverterSection() {
                             className="rounded-[7px] border border-white/10 px-2.5 py-1 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
                             &larr; prev
                           </button>
-                          <span>{qPageSafe + 1} / {qPageCount} &middot; {queueItems.length} queued</span>
+                          <span>{qPageSafe + 1} / {qPageCount} &middot; {activeList.length} {listTab === "converted" ? "done" : "queued"}</span>
                           <button onClick={() => setQPage((p) => Math.min(qPageCount - 1, p + 1))} disabled={qPageSafe >= qPageCount - 1}
                             className="rounded-[7px] border border-white/10 px-2.5 py-1 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
                             next &rarr;
                           </button>
                         </div>
-                      ) : queueItems.length > 0 ? (
-                        <span className="font-mono text-[11px] text-white/30">{queueItems.length} file{queueItems.length === 1 ? "" : "s"} queued &mdash; add more or convert</span>
-                      ) : doneItems.length > 0 ? (
-                        <span className="font-mono text-[11px] text-accent-cyan/60">{doneItems.length} file{doneItems.length === 1 ? "" : "s"} converted ✓</span>
+                      ) : activeList.length > 0 ? (
+                        <span className={cn("font-mono text-[11px]", listTab === "converted" ? "text-accent-cyan/60" : "text-white/30")}>
+                          {activeList.length} file{activeList.length === 1 ? "" : "s"} {listTab === "converted" ? "ready to download" : "queued — add more or convert"}
+                        </span>
                       ) : null}
                     </div>
 
