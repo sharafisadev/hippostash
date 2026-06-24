@@ -18,17 +18,8 @@ const links = [
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<string>("");
-  const [scrolled, setScrolled] = useState(false);
   const { user, open: openAuth, signOut } = useAuth();
 
-  // Scroll-reactive chrome: transparent at the very top, frosted-glass pill once
-  // the user scrolls past the hero fold.
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
   // While a click-initiated smooth scroll is in flight, ignore scroll-spy so
   // the indicator jumps straight to the target instead of chasing every
   // section it passes (which reads as shaking).
@@ -62,15 +53,10 @@ export function Navbar() {
 
   return (
     <header className="fixed inset-x-0 top-[14px] z-[60] mx-auto w-[calc(100%-32px)] max-w-[1180px] sm:top-[18px] sm:w-[calc(100%-48px)]">
-      <nav
-        className={cn(
-          "flex items-center justify-between rounded-[18px] py-2.5 pl-4 pr-2.5 transition-all duration-300 ease-out sm:rounded-[20px] sm:py-[11px] sm:pl-[22px] sm:pr-[14px]",
-          scrolled || open ? "lq" : "border border-transparent bg-transparent shadow-none"
-        )}
-      >
+      <nav className="lq flex items-center justify-between rounded-[18px] py-2.5 pl-4 pr-2.5 sm:rounded-[20px] sm:py-[11px] sm:pl-[22px] sm:pr-[14px]">
         <Logo href="#top" />
 
-        <div className="hidden items-center gap-1 md:flex">
+        <div className="hidden items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.04] px-1.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:flex">
           {links.map((l) => {
             const on = active === l.id;
             return (
@@ -79,14 +65,14 @@ export function Navbar() {
                 href={`#${l.id}`}
                 onClick={() => selectLink(l.id)}
                 className={cn(
-                  "relative rounded-[10px] px-3.5 py-2 text-sm font-medium transition-colors",
+                  "relative rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
                   on ? "text-white" : "text-white/55 hover:text-white"
                 )}
               >
                 {on && (
                   <motion.span
                     layoutId="nav-active"
-                    className="absolute inset-0 -z-10 rounded-[10px] bg-white/[0.08]"
+                    className="absolute inset-0 -z-10 rounded-full bg-white/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
                     transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                   />
                 )}
