@@ -6,7 +6,20 @@ import { Reveal } from "@/components/molecules/Reveal";
 import { FileGlyph } from "@/components/atoms/FileGlyph";
 import { FilePreviewModal } from "@/components/molecules/FilePreviewModal";
 import { useToast } from "@/components/providers/ToastProvider";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { formatBytes, cn } from "@/lib/utils";
+
+// Free plan: 10 converted files per day. Pro/Business are unlimited.
+const FREE_DAILY_LIMIT = 10;
+const dayKey = () => `hippo_conv_${new Date().toISOString().slice(0, 10)}`;
+function getTodayCount(): number {
+  if (typeof localStorage === "undefined") return 0;
+  return parseInt(localStorage.getItem(dayKey()) || "0", 10) || 0;
+}
+function bumpTodayCount(n: number) {
+  if (typeof localStorage === "undefined" || n <= 0) return;
+  localStorage.setItem(dayKey(), String(getTodayCount() + n));
+}
 
 const EXT: Record<string, string> = {
   PNG: "png", JPEG: "jpg", JPG: "jpg", WEBP: "webp", GIF: "gif",
@@ -51,7 +64,17 @@ export function ConverterSection() {
   const [preview, setPreview]   = useState<{ url: string; type: "image" | "pdf" | "other"; name: string } | null>(null);
   // How to handle multiple images: convert each one separately, or combine all into one PDF.
   const [imgMode, setImgMode]   = useState<"separate" | "combined">("separate");
+  const [usedToday, setUsedToday] = useState(0);
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Pro/Business users skip the daily cap. (Plan flag lives in Supabase user metadata;
+  // wired up once the Stripe → entitlement webhook is in place.)
+  const plan = (user?.user_metadata?.plan ?? user?.app_metadata?.plan) as string | undefined;
+  const isPro = plan === "pro" || plan === "business";
+  const remainingToday = isPro ? Infinity : Math.max(0, FREE_DAILY_LIMIT - usedToday);
+
+  useEffect(() => { setUsedToday(getTodayCount()); }, []);
 
   const allImages = items.length > 0 && items.every((i) => isImageFile(i.file));
   const allPDFs   = items.length > 0 && items.every((i) => isPDFFile(i.file));
@@ -121,6 +144,20 @@ export function ConverterSection() {
   async function convertAll() {
     const pending = items.filter((i) => i.status === "queued" || i.status === "error");
     if (!pending.length) return;
+
+    // ── Free daily limit ──
+    if (!isPro && remainingToday <= 0) {
+      toast(`Daily free limit reached (${FREE_DAILY_LIMIT}/day). Upgrade to Pro for unlimited conversions.`, "error");
+      return;
+    }
+    // A merge produces a single output file; otherwise one per file.
+    const outputs = mergeMode ? 1 : pending.length;
+    if (!isPro && outputs > remainingToday) {
+      toast(`Only ${remainingToday} conversion${remainingToday === 1 ? "" : "s"} left today on the free plan — upgrade to Pro for unlimited.`, "info");
+      if (!mergeMode) pending.length = remainingToday; // convert just what's allowed
+      else return; // a merge needs its full set; block until tomorrow or Pro
+    }
+
     setConverting(true);
     setConvPct(5);
 
@@ -138,6 +175,7 @@ export function ConverterSection() {
         ]);
         triggerDownload(result.url, result.name);
         toast(`${pending.length} images combined into one PDF`, "success");
+        if (!isPro) { bumpTodayCount(1); setUsedToday(getTodayCount()); }
       } catch (e) {
         toast(e instanceof Error ? e.message : "Combine failed.", "error");
       }
@@ -160,6 +198,7 @@ export function ConverterSection() {
         ]);
         triggerDownload(result.url, result.name);
         toast(`${pending.length} PDFs merged into one`, "success");
+        if (!isPro) { bumpTodayCount(1); setUsedToday(getTodayCount()); }
       } catch (e) {
         toast(e instanceof Error ? e.message : "PDF merge failed.", "error");
       }
@@ -196,6 +235,7 @@ export function ConverterSection() {
     setConvPct(100);
     await new Promise((r) => setTimeout(r, 500));
     setConverting(false); setConvPct(0);
+    if (!isPro && ok) { bumpTodayCount(ok); setUsedToday(getTodayCount()); }
     if (ok)   toast(`Converted ${ok} file${ok === 1 ? "" : "s"} ✓`, "success");
     if (fail) toast(`${fail} couldn't be converted.`, "error");
   }
@@ -529,6 +569,20 @@ export function ConverterSection() {
                     <button onClick={clearAll} className="flex-1 rounded-[12px] border border-white/10 bg-white/[0.04] py-2.5 text-sm font-semibold text-white hover:bg-white/[0.08]">
                       Clear
                     </button>
+                  </div>
+                )}
+
+                {/* Free-plan daily allowance */}
+                {!converting && !isPro && (
+                  <div className="mt-2.5 text-center font-mono text-[11px]">
+                    {remainingToday > 0 ? (
+                      <span className="text-white/35">{remainingToday} of {FREE_DAILY_LIMIT} free conversions left today</span>
+                    ) : (
+                      <span className="text-file-pdf/80">
+                        Daily free limit reached ·{" "}
+                        <a href="#pricing" className="text-accent-cyan underline-offset-2 hover:underline">Upgrade to Pro</a> for unlimited
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
