@@ -7,6 +7,27 @@ import { useEffect } from "react";
  * writing the hash to the URL — keeps URLs clean (no #features etc.).
  */
 export function SmoothScroll() {
+  // On load, scroll to any #section then strip the hash so the URL stays clean.
+  // Auth hashes (#access_token=… from OAuth) are cleaned after a short delay so
+  // Supabase can read the session first.
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash || hash.length < 2) return;
+
+    const clean = () =>
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+
+    if (/access_token|refresh_token|provider_token|[?&]error/.test(hash)) {
+      const t = setTimeout(clean, 900);
+      return () => clearTimeout(t);
+    }
+
+    const id = hash.slice(1).split(/[?&=]/)[0];
+    const target = id ? document.getElementById(id) : null;
+    if (target) target.scrollIntoView({ block: "start" });
+    clean();
+  }, []);
+
   useEffect(() => {
     function onClick(e: MouseEvent) {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return;
