@@ -31,20 +31,20 @@ export function SmoothScroll() {
   useEffect(() => {
     function onClick(e: MouseEvent) {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return;
-      const anchor = (e.target as HTMLElement)?.closest?.(
-        'a[href^="#"]'
-      ) as HTMLAnchorElement | null;
-      if (!anchor) return;
+      const anchor = (e.target as HTMLElement)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!anchor || anchor.target === "_blank") return;
 
-      const href = anchor.getAttribute("href") || "";
+      const url = new URL(anchor.href, window.location.href);
+      // Only handle hash links that point to the CURRENT page (e.g. "#pricing" or
+      // "/#pricing" while already on "/"). Cross-page links (/#x from a subpage)
+      // navigate normally, then the load effect above scrolls + cleans.
+      if (!url.hash || url.pathname !== window.location.pathname) return;
+
       e.preventDefault();
-
-      const id = href.slice(1);
+      const id = url.hash.slice(1);
       const target = id ? document.getElementById(id) : null;
-      (target ?? document.body).scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      (target ?? document.body).scrollIntoView({ behavior: "smooth", block: "start" });
+      // Keep the URL clean — never write the hash, so it can't accumulate (#a#b).
     }
 
     document.addEventListener("click", onClick);
