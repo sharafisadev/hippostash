@@ -34,6 +34,28 @@
   ::selection {
     background: rgba(78, 205, 196, 0.32);
   }
+
+  /* Subtle ambient background — slow drifting glows + an occasional light sweep,
+     all very low opacity so it reads as quiet atmosphere, not motion. */
+  @keyframes ambientDrift {
+    0%   { transform: translate3d(0, 0, 0) scale(1); }
+    50%  { transform: translate3d(4vw, -3vh, 0) scale(1.12); }
+    100% { transform: translate3d(0, 0, 0) scale(1); }
+  }
+  @keyframes ambientDriftAlt {
+    0%   { transform: translate3d(0, 0, 0) scale(1); }
+    50%  { transform: translate3d(-5vw, 4vh, 0) scale(1.08); }
+    100% { transform: translate3d(0, 0, 0) scale(1); }
+  }
+  /* Light sweep is idle most of the cycle, then drifts across once in a while. */
+  @keyframes ambientSweep {
+    0%, 72%   { transform: translate3d(-40%, 0, 0) rotate(8deg); opacity: 0; }
+    80%       { opacity: 0.5; }
+    100%      { transform: translate3d(180%, 0, 0) rotate(8deg); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ambient-layer * { animation: none !important; }
+  }
   :focus-visible {
     outline: 2px solid var(--a1);
     outline-offset: 2px;

@@ -5,6 +5,7 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
 import { IntroLoader } from "@/components/organisms/IntroLoader";
+import { AmbientBackground } from "@/components/atoms/AmbientBackground";
 
 const display = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -111,6 +112,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <AmbientBackground />
         <ToastProvider>
           <SmoothScroll />
           <IntroLoader />
