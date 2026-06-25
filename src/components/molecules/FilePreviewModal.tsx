@@ -81,7 +81,7 @@ export function FilePreviewModal({ open, onClose, url, name, kind, loading }: Pr
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}
         >
           <div
-            className="absolute inset-0 backdrop-blur-md [background:radial-gradient(120%_120%_at_50%_0%,rgba(28,26,46,0.82),rgba(10,10,18,0.9))]"
+            className="absolute inset-0 backdrop-blur-[42px] [-webkit-backdrop-filter:blur(42px)] [background:radial-gradient(120%_120%_at_50%_0%,rgba(28,26,46,0.82),rgba(10,10,18,0.9))]"
             onClick={onClose}
             aria-hidden="true"
           />

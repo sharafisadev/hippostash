@@ -41,7 +41,7 @@ export function Modal({ open, onClose, title, children, size = "sm" }: ModalProp
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
         >
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-[30px] [-webkit-backdrop-filter:blur(30px)]" onClick={onClose} aria-hidden="true" />
           <motion.div
             role="dialog"
             aria-modal="true"
