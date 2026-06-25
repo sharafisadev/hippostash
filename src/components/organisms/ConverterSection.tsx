@@ -580,7 +580,7 @@ async function combineImagesToPDF(files: File[]): Promise<Blob> {
   const pages: Array<{ jpeg: Uint8Array; w: number; h: number }> = [];
   for (const file of files) {
     const { src, w, h } = await loadImage(file);
-    const jpeg = await canvasToBlob(drawCanvas(src, w, h, "#ffffff"), "image/jpeg", 0.96);
+    const jpeg = await canvasToBlob(drawCanvas(src, w, h, "#ffffff"), "image/jpeg", 1.0);
     pages.push({ jpeg: new Uint8Array(await jpeg.arrayBuffer()), w, h });
   }
   return encodePDFPages(pages);
@@ -593,11 +593,11 @@ async function convertImage(file: File, format: string): Promise<Blob> {
     case "WEBP":
       return canvasToBlob(drawCanvas(src, w, h), format === "PNG" ? "image/png" : "image/webp");
     case "JPEG":
-      return canvasToBlob(drawCanvas(src, w, h, "#ffffff"), "image/jpeg", 0.96);
+      return canvasToBlob(drawCanvas(src, w, h, "#ffffff"), "image/jpeg", 1.0);
     case "BMP":
       return encodeBMP(drawCanvas(src, w, h).getContext("2d")!.getImageData(0, 0, w, h));
     case "PDF": {
-      const jpeg = await canvasToBlob(drawCanvas(src, w, h, "#ffffff"), "image/jpeg", 0.96);
+      const jpeg = await canvasToBlob(drawCanvas(src, w, h, "#ffffff"), "image/jpeg", 1.0);
       const bytes = new Uint8Array(await jpeg.arrayBuffer());
       return encodePDFPages([{ jpeg: bytes, w, h }]);
     }
