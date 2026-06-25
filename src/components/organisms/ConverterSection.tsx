@@ -9,7 +9,8 @@ import { useToast } from "@/components/providers/ToastProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { formatBytes, cn } from "@/lib/utils";
 
-// Free plan: 10 converted files per day. Pro/Business are unlimited.
+// Daily converted-file caps: 5/day signed-out, 10/day signed-in free, unlimited on Pro/Business.
+const ANON_DAILY_LIMIT = 5;
 const FREE_DAILY_LIMIT = 10;
 const dayKey = () => `hippo_conv_${new Date().toISOString().slice(0, 10)}`;
 function getTodayCount(): number {
@@ -66,13 +67,14 @@ export function ConverterSection() {
   const [imgMode, setImgMode]   = useState<"separate" | "combined">("separate");
   const [usedToday, setUsedToday] = useState(0);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, open: openAuth } = useAuth();
 
   // Pro/Business users skip the daily cap. (Plan flag lives in Supabase user metadata;
   // wired up once the Stripe → entitlement webhook is in place.)
   const plan = (user?.user_metadata?.plan ?? user?.app_metadata?.plan) as string | undefined;
   const isPro = plan === "pro" || plan === "business";
-  const remainingToday = isPro ? Infinity : Math.max(0, FREE_DAILY_LIMIT - usedToday);
+  const dailyLimit = isPro ? Infinity : user ? FREE_DAILY_LIMIT : ANON_DAILY_LIMIT;
+  const remainingToday = isPro ? Infinity : Math.max(0, dailyLimit - usedToday);
 
   useEffect(() => { setUsedToday(getTodayCount()); }, []);
 
@@ -147,13 +149,18 @@ export function ConverterSection() {
 
     // ── Free daily limit ──
     if (!isPro && remainingToday <= 0) {
-      toast(`Daily free limit reached (${FREE_DAILY_LIMIT}/day). Upgrade to Pro for unlimited conversions.`, "error");
+      toast(
+        user
+          ? `Daily limit reached (${dailyLimit}/day). Upgrade to Pro for unlimited conversions.`
+          : `Daily limit reached (${dailyLimit}/day). Sign in for ${FREE_DAILY_LIMIT}/day, or go Pro for unlimited.`,
+        "error"
+      );
       return;
     }
     // A merge produces a single output file; otherwise one per file.
     const outputs = mergeMode ? 1 : pending.length;
     if (!isPro && outputs > remainingToday) {
-      toast(`Only ${remainingToday} conversion${remainingToday === 1 ? "" : "s"} left today on the free plan — upgrade to Pro for unlimited.`, "info");
+      toast(`Only ${remainingToday} conversion${remainingToday === 1 ? "" : "s"} left today — ${user ? "upgrade to Pro for unlimited" : "sign in for more"}.`, "info");
       if (!mergeMode) pending.length = remainingToday; // convert just what's allowed
       else return; // a merge needs its full set; block until tomorrow or Pro
     }
@@ -572,15 +579,20 @@ export function ConverterSection() {
                   </div>
                 )}
 
-                {/* Free-plan daily allowance */}
+                {/* Daily allowance */}
                 {!converting && !isPro && (
                   <div className="mt-2.5 text-center font-mono text-[11px]">
                     {remainingToday > 0 ? (
-                      <span className="text-white/35">{remainingToday} of {FREE_DAILY_LIMIT} free conversions left today</span>
+                      <span className="text-white/35">
+                        {remainingToday} of {dailyLimit} conversions left today
+                        {!user && <> · <button onClick={() => openAuth("login")} className="text-accent-cyan underline-offset-2 hover:underline">sign in</button> for {FREE_DAILY_LIMIT}</>}
+                      </span>
                     ) : (
                       <span className="text-file-pdf/80">
-                        Daily free limit reached ·{" "}
-                        <a href="#pricing" className="text-accent-cyan underline-offset-2 hover:underline">Upgrade to Pro</a> for unlimited
+                        Daily limit reached ·{" "}
+                        {!user
+                          ? <><button onClick={() => openAuth("login")} className="text-accent-cyan underline-offset-2 hover:underline">Sign in</button> for {FREE_DAILY_LIMIT}/day</>
+                          : <><a href="#pricing" className="text-accent-cyan underline-offset-2 hover:underline">Upgrade to Pro</a> for unlimited</>}
                       </span>
                     )}
                   </div>
