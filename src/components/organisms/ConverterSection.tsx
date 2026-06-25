@@ -579,29 +579,25 @@ async function mergePDFsViaServer(files: File[]): Promise<{ url: string; name: s
 async function combineImagesToPDF(files: File[]): Promise<Blob> {
   const pages: Array<{ jpeg: Uint8Array; w: number; h: number }> = [];
   for (const file of files) {
-    const img = await loadImage(file);
-    const w = img.naturalWidth || img.width;
-    const h = img.naturalHeight || img.height;
-    const jpeg = await canvasToBlob(drawCanvas(img, w, h, "#ffffff"), "image/jpeg", 0.96);
+    const { src, w, h } = await loadImage(file);
+    const jpeg = await canvasToBlob(drawCanvas(src, w, h, "#ffffff"), "image/jpeg", 0.96);
     pages.push({ jpeg: new Uint8Array(await jpeg.arrayBuffer()), w, h });
   }
   return encodePDFPages(pages);
 }
 
 async function convertImage(file: File, format: string): Promise<Blob> {
-  const img = await loadImage(file);
-  const w = img.naturalWidth || img.width;
-  const h = img.naturalHeight || img.height;
+  const { src, w, h } = await loadImage(file);
   switch (format) {
     case "PNG":
     case "WEBP":
-      return canvasToBlob(drawCanvas(img, w, h), format === "PNG" ? "image/png" : "image/webp");
+      return canvasToBlob(drawCanvas(src, w, h), format === "PNG" ? "image/png" : "image/webp");
     case "JPEG":
-      return canvasToBlob(drawCanvas(img, w, h, "#ffffff"), "image/jpeg", 0.96);
+      return canvasToBlob(drawCanvas(src, w, h, "#ffffff"), "image/jpeg", 0.96);
     case "BMP":
-      return encodeBMP(drawCanvas(img, w, h).getContext("2d")!.getImageData(0, 0, w, h));
+      return encodeBMP(drawCanvas(src, w, h).getContext("2d")!.getImageData(0, 0, w, h));
     case "PDF": {
-      const jpeg = await canvasToBlob(drawCanvas(img, w, h, "#ffffff"), "image/jpeg", 0.96);
+      const jpeg = await canvasToBlob(drawCanvas(src, w, h, "#ffffff"), "image/jpeg", 0.96);
       const bytes = new Uint8Array(await jpeg.arrayBuffer());
       return encodePDFPages([{ jpeg: bytes, w, h }]);
     }
@@ -609,7 +605,7 @@ async function convertImage(file: File, format: string): Promise<Blob> {
       const scale = Math.min(1, 256 / Math.max(w, h));
       const iw = Math.max(1, Math.round(w * scale));
       const ih = Math.max(1, Math.round(h * scale));
-      const png = await canvasToBlob(drawCanvas(img, iw, ih), "image/png");
+      const png = await canvasToBlob(drawCanvas(src, iw, ih), "image/png");
       return encodeICO(new Uint8Array(await png.arrayBuffer()), iw, ih);
     }
     default:
@@ -617,17 +613,32 @@ async function convertImage(file: File, format: string): Promise<Blob> {
   }
 }
 
-function loadImage(file: File): Promise<HTMLImageElement> {
+interface LoadedImage { src: CanvasImageSource; w: number; h: number; }
+
+function loadImage(file: File): Promise<LoadedImage> {
   return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Could not load image")); };
-    img.src = url;
+    // Decode straight from the file bytes — createImageBitmap never taints a canvas,
+    // which is what caused "Tainted canvases may not be exported." Fall back to <img>.
+    if (typeof createImageBitmap === "function") {
+      createImageBitmap(file)
+        .then((bitmap) => resolve({ src: bitmap, w: bitmap.width, h: bitmap.height }))
+        .catch(() => fallback());
+      return;
+    }
+    fallback();
+
+    function fallback() {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => { URL.revokeObjectURL(url); resolve({ src: img, w: img.naturalWidth || img.width, h: img.naturalHeight || img.height }); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Could not load image")); };
+      img.src = url;
+    }
   });
 }
 
-function drawCanvas(img: HTMLImageElement, w: number, h: number, background?: string): HTMLCanvasElement {
+function drawCanvas(src: CanvasImageSource, w: number, h: number, background?: string): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext("2d");
@@ -636,7 +647,7 @@ function drawCanvas(img: HTMLImageElement, w: number, h: number, background?: st
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   if (background) { ctx.fillStyle = background; ctx.fillRect(0, 0, w, h); }
-  ctx.drawImage(img, 0, 0, w, h);
+  ctx.drawImage(src, 0, 0, w, h);
   return canvas;
 }
 
