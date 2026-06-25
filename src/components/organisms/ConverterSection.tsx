@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Reveal } from "@/components/molecules/Reveal";
 import { FileGlyph } from "@/components/atoms/FileGlyph";
 import { FilePreviewModal } from "@/components/molecules/FilePreviewModal";
+import { Modal } from "@/components/molecules/Modal";
 import { useToast } from "@/components/providers/ToastProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { formatBytes, cn } from "@/lib/utils";
@@ -66,6 +67,7 @@ export function ConverterSection() {
   // How to handle multiple images: convert each one separately, or combine all into one PDF.
   const [imgMode, setImgMode]   = useState<"separate" | "combined">("separate");
   const [usedToday, setUsedToday] = useState(0);
+  const [limitModal, setLimitModal] = useState(false);
   const { toast } = useToast();
   const { user, open: openAuth } = useAuth();
 
@@ -149,12 +151,7 @@ export function ConverterSection() {
 
     // ── Free daily limit ──
     if (!isPro && remainingToday <= 0) {
-      toast(
-        user
-          ? `Daily limit reached (${dailyLimit}/day). Upgrade to Pro for unlimited conversions.`
-          : `Daily limit reached (${dailyLimit}/day). Sign in for ${FREE_DAILY_LIMIT}/day, or go Pro for unlimited.`,
-        "error"
-      );
+      setLimitModal(true);
       return;
     }
     // A merge produces a single output file; otherwise one per file.
@@ -611,6 +608,46 @@ export function ConverterSection() {
         name={preview?.name ?? ""}
         kind={preview?.type ?? "other"}
       />
+
+      {/* Daily limit reached */}
+      <Modal open={limitModal} onClose={() => setLimitModal(false)} title="Daily limit reached">
+        <div className="p-6 text-center">
+          <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-[16px] bg-[linear-gradient(135deg,var(--a1),var(--a2))]">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B0B14" strokeWidth="2.2"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </div>
+          <h3 className="m-0 font-display text-[19px] font-bold">You&rsquo;ve hit today&rsquo;s limit</h3>
+          <p className="mx-auto mt-2 max-w-[330px] text-sm leading-relaxed text-white/55">
+            {user
+              ? `You've used all ${dailyLimit} conversions for today. Upgrade to Pro for unlimited conversions, or come back tomorrow.`
+              : `You've used all ${dailyLimit} free conversions for today. Sign in to get ${FREE_DAILY_LIMIT} a day — free — or upgrade to Pro for unlimited.`}
+          </p>
+          <div className="mt-6 flex flex-col gap-2.5">
+            {user ? (
+              <button
+                onClick={() => { setLimitModal(false); document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" }); }}
+                className="btn-primary w-full rounded-[12px] py-3 text-[15px]"
+              >
+                Upgrade to Pro
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => { setLimitModal(false); openAuth("login"); }}
+                  className="btn-primary w-full rounded-[12px] py-3 text-[15px]"
+                >
+                  Sign in for {FREE_DAILY_LIMIT}/day
+                </button>
+                <button
+                  onClick={() => { setLimitModal(false); document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" }); }}
+                  className="w-full rounded-[12px] border border-white/10 bg-white/[0.04] py-2.5 text-sm font-semibold text-white hover:bg-white/[0.08]"
+                >
+                  See Pro plans
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </Modal>
     </section>
   );
 }
