@@ -53,6 +53,16 @@
     80%       { opacity: 0.5; }
     100%      { transform: translate3d(180%, 0, 0) rotate(8deg); opacity: 0; }
   }
+  /* Floating particles — gentle rise + twinkle. */
+  @keyframes ambientTwinkle {
+    0%, 100% { opacity: 0.12; transform: translateY(0) scale(1); }
+    50%      { opacity: 0.6;  transform: translateY(-14px) scale(1.25); }
+  }
+  /* Slow-floating outlined shapes. */
+  @keyframes ambientFloatShape {
+    0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    50%      { transform: translate3d(2vw, -3vh, 0) rotate(24deg); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .ambient-layer * { animation: none !important; }
   }
