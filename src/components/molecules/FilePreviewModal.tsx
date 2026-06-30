@@ -93,7 +93,7 @@ export function FilePreviewModal({ open, onClose, url, name, kind, loading }: Pr
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ type: "spring", stiffness: 320, damping: 26 }}
-            className="relative z-10 flex max-h-[82vh] w-full max-w-[560px] flex-col overflow-hidden rounded-[18px] border border-white/10 bg-[#0d0d16]/95 shadow-[0_30px_80px_rgba(0,0,0,0.6)]"
+            className="relative z-10 flex max-h-[68vh] w-full max-w-[560px] flex-col overflow-hidden rounded-[18px] border border-white/10 bg-[#0d0d16]/95 shadow-[0_30px_80px_rgba(0,0,0,0.6)] sm:max-h-[82vh]"
           >
             {/* Toolbar */}
             <div className="flex flex-none items-center gap-2 border-b border-white/[0.08] px-3 py-2.5">
@@ -127,7 +127,7 @@ export function FilePreviewModal({ open, onClose, url, name, kind, loading }: Pr
 
             {/* Stage */}
             <div
-              className="relative flex min-h-[240px] flex-1 items-center justify-center overflow-hidden bg-black/20 p-3"
+              className="relative flex min-h-[180px] flex-1 items-center justify-center overflow-hidden bg-black/20 p-3 sm:min-h-[240px]"
               onWheel={onWheel}
             >
               {loading || !url ? (
@@ -143,7 +143,7 @@ export function FilePreviewModal({ open, onClose, url, name, kind, loading }: Pr
                   style={{ transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`, transition: drag.current ? "none" : "transform 0.12s ease-out" }}
                 />
               ) : kind === "pdf" ? (
-                <iframe src={url} title={name} className="h-[60vh] max-h-full w-full rounded-[8px] bg-white" />
+                <iframe src={url} title={name} className="h-[44vh] max-h-full w-full rounded-[8px] bg-white sm:h-[60vh]" />
               ) : (
                 <div className="px-6 py-8 text-center">
                   <FileGlyph format={glyphFor(name)} size={56} showLabel={false} className="mx-auto" />
