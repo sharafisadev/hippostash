@@ -53,6 +53,14 @@ function triggerDownload(url: string, name: string) {
   a.href = url; a.download = name;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
+// Touch devices ignore the `download` attr for blob URLs and open the file
+// full-screen instead — so we skip the auto-download there and let the user tap
+// the download button in the Converted tab.
+const isCoarsePointer = () =>
+  typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+function autoDownload(url: string, name: string) {
+  if (!isCoarsePointer()) triggerDownload(url, name);
+}
 
 export function ConverterSection() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -177,7 +185,7 @@ export function ConverterSection() {
           ...prev.filter((p) => !ids.has(p.id)),
           { id: `merged-${Date.now()}`, file: new File([blob], "combined.pdf", { type: "application/pdf" }), status: "done", result },
         ]);
-        triggerDownload(result.url, result.name);
+        autoDownload(result.url, result.name);
         toast(`${pending.length} images combined into one PDF`, "success");
         if (!isPro) { bumpTodayCount(1); setUsedToday(getTodayCount()); }
       } catch (e) {
@@ -200,7 +208,7 @@ export function ConverterSection() {
           ...prev.filter((p) => !ids.has(p.id)),
           { id: `merged-${Date.now()}`, file: new File([], result.name, { type: "application/pdf" }), status: "done", result },
         ]);
-        triggerDownload(result.url, result.name);
+        autoDownload(result.url, result.name);
         toast(`${pending.length} PDFs merged into one`, "success");
         if (!isPro) { bumpTodayCount(1); setUsedToday(getTodayCount()); }
       } catch (e) {
@@ -228,7 +236,7 @@ export function ConverterSection() {
           result = await convertViaServer(item.file, format);
         }
         setItems((prev) => prev.map((p) => p.id === item.id ? { ...p, status: "done", result } : p));
-        triggerDownload(result.url, result.name);
+        autoDownload(result.url, result.name);
         ok++;
       } catch (e) {
         fail++;
